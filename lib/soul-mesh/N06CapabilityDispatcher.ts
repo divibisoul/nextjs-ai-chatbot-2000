@@ -1,21 +1,23 @@
 import { nucleus05Processor } from '@/lib/soul-core/Nucleus05Processor';
-import { createNucleus05Tools } from '@/lib/soul-core/Nucleus05ToolRegistry';
-import type { Session } from 'next-auth';
-import type { UIMessageStreamWriter } from 'ai';
-import type { ChatMessage } from '@/lib/types';
+import { createNucleus05Tools, NUCLEUS_05_TOOL_IDS, type Nucleus05ToolContext } from '@/lib/soul-core/Nucleus05ToolRegistry';
 
-export type N06MeshExecutionContext = { session: Session; dataStream: UIMessageStreamWriter<ChatMessage> };
+export type N06MeshExecutionContext = Nucleus05ToolContext;
 
-/** Bridges Mesh to the existing N06 capability/tool runtime without duplicating implementations. */
+/** Mesh -> N06 runtime bridge. Uses the same implementations as the native N06 runtime. */
 export async function executeN06Capability(capability: string, payload: unknown, context: N06MeshExecutionContext) {
-  const tools = createNucleus05Tools(context);
-  if (nucleus05Processor.listHandlers().includes(capability)) return nucleus05Processor.execute(capability, payload);
+  if (capability === 'ai-pilot') {
+    return nucleus05Processor.execute({ capability: 'ai-pilot', input: payload }, context);
+  }
   if (capability === 'tool-execution') {
     const input = payload as { toolId?: string; args?: unknown };
-    if (!input?.toolId || !(input.toolId in tools)) throw new Error(`UNKNOWN_TOOL:${input?.toolId ?? ''}`);
+    if (!input?.toolId || !NUCLEUS_05_TOOL_IDS.includes(input.toolId as any)) throw new Error(`UNKNOWN_TOOL:${input?.toolId ?? ''}`);
+    const tools = createNucleus05Tools(context);
     const tool = tools[input.toolId as keyof typeof tools] as any;
     if (typeof tool?.execute !== 'function') throw new Error(`TOOL_NOT_EXECUTABLE:${input.toolId}`);
     return tool.execute(input.args ?? {});
+  }
+  if (nucleus05Processor.supports(capability)) {
+    return nucleus05Processor.execute({ capability: capability as any, input: payload }, context);
   }
   throw new Error(`CAPABILITY_HANDLER_NOT_REGISTERED:${capability}`);
 }
