@@ -1,6 +1,64 @@
+import { N06_CAPABILITIES, supportsN06Capability } from './N06Capabilities';
+import { isSoulMeshMessage, type SoulMeshMessage } from './SoulMeshProtocol';
+
 export const NUCLEUS_ID = 'N06' as const;
-export const SOUL_MESH_PROTOCOL = 'soul-mesh/1' as const;
-export type SoulMeshMessage={protocol:typeof SOUL_MESH_PROTOCOL;id:string;correlationId:string;source:'N01'|'N02'|'N03'|'N04'|'N05'|'N06';target:'N01'|'N02'|'N03'|'N04'|'N05'|'N06';kind:'request'|'response'|'event'|'error';capability?:string;payload:unknown;timestamp:number};
-const nuclei=new Set(['N01','N02','N03','N04','N05','N06']);
-export function validateMeshMessage(m:SoulMeshMessage){if(m.protocol!==SOUL_MESH_PROTOCOL)throw new Error('UNSUPPORTED_MESH_PROTOCOL');if(!m.id||!m.correlationId)throw new Error('MISSING_MESSAGE_ID');if(!nuclei.has(m.source)||!nuclei.has(m.target)||m.source===m.target)throw new Error('INVALID_NUCLEUS_ROUTE');if(!m.capability&&m.kind!=='event')throw new Error('MISSING_CAPABILITY');if(!Number.isFinite(m.timestamp))throw new Error('INVALID_TIMESTAMP');return true}
-export async function handleMeshMessage(message:SoulMeshMessage,handlers:Record<string,(payload:unknown)=>Promise<unknown>|unknown>){validateMeshMessage(message);if(message.target!==NUCLEUS_ID)throw new Error('WRONG_TARGET');if(message.kind!=='request')return message;const handler=handlers[message.capability!];if(!handler)return{...message,kind:'error' as const,payload:{code:'CAPABILITY_NOT_FOUND',nucleus:NUCLEUS_ID}};try{return{...message,kind:'response' as const,payload:await handler(message.payload)}}catch(error){return{...message,kind:'error' as const,payload:{code:'CAPABILITY_EXECUTION_ERROR',detail:error instanceof Error?error.message:'Unknown error'}}}}
+const MAX_CLOCK_SKEW_MS = Number(process.env.SOUL_MESH_MAX_CLOCK_SKEW_MS || 300_000);
+
+export function validateMeshMessage(message: unknown): asserts message is SoulMeshMessage {
+  if (!isSoulMeshMessage(message)) throw new Error('INVALID_SOUL_MESH_MESSAGE');
+  if (message.target !== NUCLEUS_ID) throw new Error('WRONG_TARGET');
+  if (message.kind === 'request' && !message.capability) throw new Error('MISSING_CAPABILITY');
+  if (Math.abs(Date.now() - message.timestamp) > MAX_CLOCK_SKEW_MS) throw new Error('MESSAGE_TIMESTAMP_OUT_OF_RANGE');
+}
+
+export async function handleMeshMessage(
+  message: SoulMeshMessage,
+  handlers: Record<string, (payload: unknown) => Promise<unknown> | unknown>,
+) {
+  validateMeshMessage(message);
+  if (message.kind !== 'request') return message;
+
+  const capability = message.capability!;
+  if (!supportsN06Capability(capability)) {
+    return {
+      ...message,
+      kind: 'error' as const,
+      payload: {
+        code: 'CAPABILITY_NOT_FOUND',
+        nucleus: NUCLEUS_ID,
+        capability,
+        availableCapabilities: [...N06_CAPABILITIES],
+      },
+    };
+  }
+
+  const handler = handlers[capability];
+  if (!handler) {
+    return {
+      ...message,
+      kind: 'error' as const,
+      payload: { code: 'CAPABILITY_HANDLER_NOT_REGISTERED', nucleus: NUCLEUS_ID, capability },
+    };
+  }
+
+  try {
+    return {
+      ...message,
+      kind: 'response' as const,
+      payload: await handler(message.payload),
+      timestamp: Date.now(),
+    };
+  } catch (error) {
+    return {
+      ...message,
+      kind: 'error' as const,
+      payload: {
+        code: 'CAPABILITY_EXECUTION_ERROR',
+        nucleus: NUCLEUS_ID,
+        capability,
+        detail: error instanceof Error ? error.message : 'Unknown error',
+      },
+      timestamp: Date.now(),
+    };
+  }
+}
