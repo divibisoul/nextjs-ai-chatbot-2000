@@ -1,4 +1,5 @@
-import { generateText, stepCountIs } from 'ai';
+import { generateText, stepCountIs, tool } from 'ai';
+import { z } from 'zod';
 import { myProvider } from '@/lib/ai/providers';
 import { getWeather } from '@/lib/ai/tools/get-weather';
 import { createSoulMeshMessage } from './SoulMeshProtocol';
@@ -28,8 +29,7 @@ type PeerRequest = {
 
 function asPrompt(input: unknown): string {
   if (typeof input === 'string') return input.slice(0, MAX_PROMPT_CHARS);
-  const serialized = JSON.stringify(input ?? null);
-  return serialized.slice(0, MAX_PROMPT_CHARS);
+  return JSON.stringify(input ?? null).slice(0, MAX_PROMPT_CHARS);
 }
 
 function runtimeInput(input: unknown): RuntimeInput {
@@ -44,6 +44,29 @@ function buildPrompt(input: RuntimeInput): string {
   return `${prompt}\n\n[SOUL CONTEXT]\n${asPrompt(input.context)}`;
 }
 
+function createNucleusCollaborationTool() {
+  return tool({
+    description: 'Ask another Soul AI nucleus to perform a capability and return its structured result.',
+    inputSchema: z.object({
+      target: z.enum(['N01', 'N02', 'N03', 'N04', 'N05']),
+      capability: z.string().min(1).max(200),
+      payload: z.unknown().optional(),
+      correlationId: z.string().min(1).max(200).optional(),
+    }),
+    execute: async ({ target, capability, payload, correlationId }) => {
+      const message = createSoulMeshMessage({
+        correlationId: correlationId || crypto.randomUUID(),
+        source: 'N06',
+        target,
+        kind: 'request',
+        capability,
+        payload,
+      });
+      return sendToPeer(target, message);
+    },
+  });
+}
+
 async function runModel(input: unknown, model: string, defaultSystem: string) {
   const request = runtimeInput(input);
   const result = await generateText({
@@ -51,8 +74,11 @@ async function runModel(input: unknown, model: string, defaultSystem: string) {
     system: request.system || defaultSystem,
     prompt: buildPrompt(request),
     stopWhen: stepCountIs(5),
-    tools: { getWeather },
-    experimental_activeTools: ['getWeather'],
+    tools: {
+      getWeather,
+      askNucleus: createNucleusCollaborationTool(),
+    },
+    experimental_activeTools: ['getWeather', 'askNucleus'],
   });
 
   return {
@@ -83,15 +109,16 @@ class N06Runtime {
             chatModel: CHAT_MODEL,
             reasoningModel: REASONING_MODEL,
             toolCalling: true,
+            nucleusCollaboration: true,
             maxSteps: 5,
           },
           peers: ['N01', 'N02', 'N03', 'N04', 'N05'],
           timestamp: Date.now(),
         };
       case 'ai-pilot':
-        return runModel(input, CHAT_MODEL, 'You are the N06 AI nucleus of Soul. Collaborate with other nuclei through structured context and return precise, useful results.');
+        return runModel(input, CHAT_MODEL, 'You are the N06 AI nucleus of Soul, a hybrid intelligence composed of six cooperating AI nuclei. Use askNucleus when another nucleus is better suited to the task. Treat remote results as evidence, preserve correlation context, and synthesize the final answer.');
       case 'cognitive.reason':
-        return runModel(input, REASONING_MODEL, 'You are N06 reasoning within the Soul hybrid intelligence. Analyze the supplied problem rigorously, expose assumptions, compare alternatives, and return an actionable conclusion.');
+        return runModel(input, REASONING_MODEL, 'You are N06 reasoning within the Soul hybrid intelligence. Analyze rigorously, expose assumptions, compare alternatives, and delegate to another nucleus with askNucleus when its specialized capability is needed.');
       case 'context-orchestration': {
         const request = runtimeInput(input);
         return {
@@ -113,9 +140,7 @@ class N06Runtime {
 
   private async executeTool(input: unknown) {
     const request = input as { tool?: string; input?: unknown } | null;
-    if (!request || request.tool !== 'getWeather') {
-      throw new Error('TOOL_NOT_EXPOSED_TO_SOUL_MESH');
-    }
+    if (!request || request.tool !== 'getWeather') throw new Error('TOOL_NOT_EXPOSED_TO_SOUL_MESH');
     const args = request.input as { latitude?: unknown; longitude?: unknown } | undefined;
     const latitude = Number(args?.latitude);
     const longitude = Number(args?.longitude);
