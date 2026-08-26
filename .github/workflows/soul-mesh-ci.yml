@@ -17,6 +17,6 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - name: Typecheck Mesh adapter
-        run: pnpm exec tsc --noEmit
+        run: pnpm exec tsc -p tsconfig.mesh.json --noEmit
       - name: Run nucleus processor tests
         run: pnpm run test:nucleus05
