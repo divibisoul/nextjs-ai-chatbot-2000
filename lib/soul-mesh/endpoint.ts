@@ -6,11 +6,9 @@ export const SOUL_MESH_PROTOCOL = 'soul-mesh/1' as const;
 
 function validateChannelMetadata(message: SoulMeshMessage) {
   if (!message.channelId) return;
-  const expectedOut = `${message.source}.OUT.${message.target}`;
-  const expectedIn = `${message.target}.IN.${message.source}`;
-  if (message.channelId !== expectedOut && message.channelId !== expectedIn) {
-    throw new Error('INVALID_CHANNEL_ID');
-  }
+  const slotPattern = new RegExp(`^(?:${message.source}\\.OUT\\.[1-5]\\.${message.target}|${message.target}\\.IN\\.[1-5]\\.${message.source})$`);
+  const legacyPattern = new RegExp(`^(?:${message.source}\\.OUT\\.${message.target}|${message.target}\\.IN\\.${message.source})$`);
+  if (!slotPattern.test(message.channelId) && !legacyPattern.test(message.channelId)) throw new Error('INVALID_CHANNEL_ID');
 }
 
 export function validateMeshMessage(message: SoulMeshMessage) {
@@ -29,13 +27,7 @@ export async function handleMeshMessage(message: SoulMeshMessage, handlers: Reco
   const handler = message.capability ? handlers[message.capability] : undefined;
   if (!handler) return { ...message, kind: 'error' as const, proof: 'CONNECTED' as const, payload: { code: 'CAPABILITY_NOT_FOUND' } };
   try {
-    return {
-      ...message,
-      kind: 'response' as const,
-      // Handler execution is proven here; transport-level verification remains the caller's responsibility.
-      proof: 'EXECUTED' as const,
-      payload: await handler(message.payload),
-    };
+    return { ...message, kind: 'response' as const, proof: 'EXECUTED' as const, payload: await handler(message.payload) };
   } catch (error) {
     return { ...message, kind: 'error' as const, proof: 'EXECUTED' as const, payload: { code: 'CAPABILITY_EXECUTION_ERROR', detail: error instanceof Error ? error.message : 'Unknown error' } };
   }
