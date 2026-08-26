@@ -5,7 +5,7 @@ export interface Nucleus05Request { capability: Nucleus05Capability; input: unkn
 export interface Nucleus05Pilot { id: string; execute(input: unknown, context?: Nucleus05Context): Promise<unknown>; }
 export type Nucleus05Handler = (input: unknown, context?: Nucleus05Context) => Promise<unknown>;
 
-/** Nucleus 05 runtime boundary. Provider-specific AI remains an adapter; the Soul owns orchestration. */
+/** N06 runtime boundary. Provider-specific AI remains an adapter; Soul owns orchestration. */
 export class Nucleus05Processor {
   readonly id = 'nucleus-05' as const;
   readonly capabilities = NUCLEUS_05_CAPABILITIES;
@@ -15,6 +15,8 @@ export class Nucleus05Processor {
   registerHandler(capability: Nucleus05Capability, handler: Nucleus05Handler) { this.handlers.set(capability, handler); return this; }
   registerPilot(pilot: Nucleus05Pilot) { this.pilot = pilot; return this; }
   getPilot() { return this.pilot; }
+  listHandlers() { return [...this.handlers.keys()]; }
+  executableCapabilities() { return this.capabilities.filter(capability => capability === 'ai-pilot' ? Boolean(this.pilot) : this.handlers.has(capability)); }
   supports(capability: string): capability is Nucleus05Capability { return this.capabilities.includes(capability as Nucleus05Capability); }
 
   async execute(request: Nucleus05Request, context?: Nucleus05Context) {
