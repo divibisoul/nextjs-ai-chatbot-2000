@@ -1,8 +1,17 @@
 name: Soul Mesh CI
+
 on:
   push:
-    branches: [ main ]
+    branches: [main]
+  pull_request:
+    paths:
+      - 'app/api/soul-mesh/**'
+      - 'lib/soul-mesh/**'
+      - 'lib/soul-core/**'
+      - 'tsconfig.mesh.json'
+      - '.github/workflows/soul-mesh-ci.yml'
   workflow_dispatch:
+
 jobs:
   verify:
     runs-on: ubuntu-latest
@@ -16,7 +25,9 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - name: Typecheck Mesh adapter
+      - name: Typecheck Soul Mesh
         run: pnpm exec tsc -p tsconfig.mesh.json --noEmit
+      - name: Run N06 Mesh tests
+        run: pnpm exec tsx --test lib/soul-mesh/N06Runtime.test.ts
       - name: Run nucleus processor tests
         run: pnpm run test:nucleus05
