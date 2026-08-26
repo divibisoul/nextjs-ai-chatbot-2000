@@ -1,19 +1,24 @@
 import type { SoulMeshMessage, SoulNucleus } from './SoulMeshProtocol';
+import { isSoulMeshMessage } from './SoulMeshProtocol';
 
 export const PEERS = ['N01', 'N02', 'N03', 'N04', 'N05'] as const;
 export type SoulPeer = typeof PEERS[number];
 
 const ENV_BY_PEER: Record<SoulPeer, string> = {
-  N01: 'SOUL_MESH_N01_URL',
-  N02: 'SOUL_MESH_N02_URL',
-  N03: 'SOUL_MESH_N03_URL',
-  N04: 'SOUL_MESH_N04_URL',
-  N05: 'SOUL_MESH_N05_URL',
+  N01: 'SOUL_MESH_N01_URL', N02: 'SOUL_MESH_N02_URL', N03: 'SOUL_MESH_N03_URL',
+  N04: 'SOUL_MESH_N04_URL', N05: 'SOUL_MESH_N05_URL',
 };
 
 export function getPeerUrl(peer: SoulPeer): string | undefined {
   const value = process.env[ENV_BY_PEER[peer]]?.trim();
-  return value ? value.replace(/\/$/, '') : undefined;
+  if (!value) return undefined;
+  try {
+    const url = new URL(value);
+    if (!['http:', 'https:'].includes(url.protocol)) return undefined;
+    return url.toString().replace(/\/$/, '');
+  } catch {
+    return undefined;
+  }
 }
 
 export function configuredPeers() {
@@ -32,15 +37,18 @@ export async function sendToPeer(
 ): Promise<SoulMeshMessage> {
   const baseUrl = getPeerUrl(peer);
   if (!baseUrl) throw new Error(`PEER_ENDPOINT_NOT_CONFIGURED:${peer}`);
+  if (message.target !== peer || message.source !== 'N06') throw new Error('INVALID_OUTBOUND_MESH_ROUTE');
 
+  const timeoutMs = Math.min(Math.max(options.timeoutMs ?? 15_000, 1_000), 60_000);
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), options.timeoutMs ?? 15000);
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
-    const token = process.env.SOUL_MESH_TOKEN;
+    const token = process.env.SOUL_MESH_TOKEN?.trim();
     const response = await fetch(`${baseUrl}/api/soul-mesh`, {
       method: 'POST',
       headers: {
+        accept: 'application/json',
         'content-type': 'application/json',
         ...(token ? { authorization: `Bearer ${token}` } : {}),
       },
@@ -49,11 +57,19 @@ export async function sendToPeer(
       cache: 'no-store',
     });
 
-    const body = await response.json().catch(() => null);
-    if (!response.ok) {
-      throw new Error(`PEER_REQUEST_FAILED:${peer}:${response.status}:${JSON.stringify(body)}`);
+    const raw = await response.text();
+    let body: unknown = null;
+    try { body = raw ? JSON.parse(raw) : null; } catch { body = null; }
+
+    if (!response.ok) throw new Error(`PEER_REQUEST_FAILED:${peer}:${response.status}`);
+    if (!isSoulMeshMessage(body)) throw new Error(`INVALID_PEER_MESH_RESPONSE:${peer}`);
+    if (body.source !== peer || body.target !== 'N06' || body.correlationId !== message.correlationId) {
+      throw new Error(`INVALID_PEER_MESH_CORRELATION:${peer}`);
     }
-    return body as SoulMeshMessage;
+    return body;
+  } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') throw new Error(`PEER_REQUEST_TIMEOUT:${peer}`);
+    throw error;
   } finally {
     clearTimeout(timeout);
   }
