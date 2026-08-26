@@ -1,17 +1,40 @@
 import type { SoulMeshMessage, SoulNucleus } from './SoulMeshProtocol';
 import { isSoulMeshMessage } from './SoulMeshProtocol';
 
-export const NUCLEUS_05 = 'chatbot-2000' as const satisfies SoulNucleus;
-export const NUCLEUS_05_PROTOCOL = 'soul-mesh/1' as const;
-export const NUCLEUS_05_PEER_COUNT = 5;
-export const NUCLEUS_05_ROUTE_COUNT = 10;
+/** Legacy filename retained for compatibility; this contract is the N06 Mesh contract. */
+export const NUCLEUS_06: SoulNucleus = 'N06';
+export const NUCLEUS_06_PROTOCOL = 'soul-mesh/1' as const;
+export const NUCLEUS_06_PEER_COUNT = 5;
+export const NUCLEUS_06_ROUTE_COUNT = 10;
 
-export function createNucleus05Request(target: SoulNucleus, capability: string, payload: unknown): SoulMeshMessage {
+export function createNucleus06Request(target: SoulNucleus, capability: string, payload: unknown): SoulMeshMessage {
   const correlationId = crypto.randomUUID();
-  return { protocol: NUCLEUS_05_PROTOCOL, id: crypto.randomUUID(), correlationId, source: NUCLEUS_05, target, kind: 'request', capability, payload, timestamp: Date.now() };
+  return {
+    protocol: NUCLEUS_06_PROTOCOL,
+    id: crypto.randomUUID(),
+    correlationId,
+    source: NUCLEUS_06,
+    target,
+    kind: 'request',
+    capability,
+    payload,
+    timestamp: Date.now(),
+  };
 }
 
-export function validateNucleus05Response(request: SoulMeshMessage, response: unknown): response is SoulMeshMessage {
+export function validateNucleus06Response(request: SoulMeshMessage, response: unknown): response is SoulMeshMessage {
   if (!isSoulMeshMessage(response)) return false;
-  return response.protocol === request.protocol && response.correlationId === request.correlationId && response.source === request.target && response.target === request.source && (response.kind === 'response' || response.kind === 'error');
+  return response.protocol === request.protocol
+    && response.correlationId === request.correlationId
+    && response.source === request.target
+    && response.target === request.source
+    && (response.kind === 'response' || response.kind === 'error');
 }
+
+/** Backward-compatible aliases for existing Nucleus05 imports. */
+export const NUCLEUS_05 = NUCLEUS_06;
+export const NUCLEUS_05_PROTOCOL = NUCLEUS_06_PROTOCOL;
+export const NUCLEUS_05_PEER_COUNT = NUCLEUS_06_PEER_COUNT;
+export const NUCLEUS_05_ROUTE_COUNT = NUCLEUS_06_ROUTE_COUNT;
+export const createNucleus05Request = createNucleus06Request;
+export const validateNucleus05Response = validateNucleus06Response;
