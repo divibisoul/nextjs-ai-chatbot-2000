@@ -1,27 +1,37 @@
 import { NextResponse } from 'next/server';
-import { N06_CAPABILITIES } from '@/lib/soul-mesh/N06Runtime';
+import { N06_CAPABILITIES } from '@/lib/soul-mesh/N06Capabilities';
+import { SOUL_MESH_PROTOCOL, SOUL_NUCLEI } from '@/lib/soul-mesh/SoulMeshProtocol';
 
 const NUCLEUS_ID = 'N06' as const;
-const PROTOCOL = 'soul-mesh/1' as const;
-const NUCLEI = new Set(['N01', 'N02', 'N03', 'N04', 'N05']);
 
 function authorized(request: Request) {
-  const token = process.env.SOUL_MESH_TOKEN;
-  return !token || request.headers.get('authorization') === `Bearer ${token}`;
+  const token = process.env.SOUL_MESH_TOKEN?.trim();
+  if (!token) return process.env.NODE_ENV !== 'production';
+  return request.headers.get('authorization') === `Bearer ${token}`;
 }
 
 export async function POST(request: Request) {
   if (!authorized(request)) return NextResponse.json({ accepted: false, error: 'Unauthorized' }, { status: 401 });
+
   const body = await request.json().catch(() => null) as { source?: string; target?: string; protocol?: string } | null;
-  if (!body || body.protocol !== PROTOCOL || body.target !== NUCLEUS_ID || !body.source || !NUCLEI.has(body.source)) {
-    return NextResponse.json({ accepted: false, error: 'Invalid handshake' }, { status: 400 });
+  const source = body?.source;
+  if (
+    !body ||
+    body.protocol !== SOUL_MESH_PROTOCOL ||
+    body.target !== NUCLEUS_ID ||
+    !source ||
+    !(SOUL_NUCLEI as readonly string[]).includes(source) ||
+    source === NUCLEUS_ID
+  ) {
+    return NextResponse.json({ accepted: false, error: 'INVALID_SOUL_MESH_HANDSHAKE' }, { status: 400 });
   }
+
   return NextResponse.json({
     accepted: true,
-    protocol: PROTOCOL,
+    protocol: SOUL_MESH_PROTOCOL,
     source: NUCLEUS_ID,
-    target: body.source,
-    capabilities: ['mesh.ping', 'mesh.describe', ...N06_CAPABILITIES],
+    target: source,
+    capabilities: [...N06_CAPABILITIES],
     timestamp: Date.now(),
   });
 }
