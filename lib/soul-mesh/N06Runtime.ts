@@ -2,6 +2,8 @@ import { generateText } from 'ai';
 import { myProvider } from '@/lib/ai/providers';
 import { nucleus05Processor } from '@/lib/soul-core/Nucleus05Processor';
 import type { Nucleus05Capability } from '@/lib/soul-core/Nucleus05Capabilities';
+import { createSoulMeshMessage } from './SoulMeshProtocol';
+import { isPeer, sendToPeer } from './peerTransport';
 
 const MODEL = process.env.SOUL_MESH_AI_MODEL || 'chat-model';
 
@@ -29,12 +31,22 @@ export function ensureN06Runtime() {
       context: input,
       timestamp: Date.now(),
     }))
-    .registerHandler('mesh-communication', async input => ({
-      nucleus: 'N06',
-      accepted: true,
-      payload: input,
-      timestamp: Date.now(),
-    }))
+    .registerHandler('mesh-communication', async input => {
+      const request = input as { target?: string; capability?: string; payload?: unknown };
+      if (!request.target || !isPeer(request.target)) throw new Error('INVALID_MESH_PEER');
+      if (!request.capability) throw new Error('MISSING_REMOTE_CAPABILITY');
+
+      const message = createSoulMeshMessage({
+        correlationId: crypto.randomUUID(),
+        source: 'N06',
+        target: request.target,
+        kind: 'request',
+        capability: request.capability,
+        payload: request.payload,
+      });
+
+      return sendToPeer(request.target, message);
+    })
     .registerHandler('streaming', async input => ({
       nucleus: 'N06',
       accepted: true,
