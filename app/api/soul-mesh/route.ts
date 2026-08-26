@@ -1,55 +1,68 @@
 import { NextResponse } from 'next/server';
 import { handleMeshMessage } from '@/lib/soul-mesh/endpoint';
-import type { SoulMeshMessage } from '@/lib/soul-mesh/SoulMeshProtocol';
-import { ensureN06Runtime, N06_CAPABILITIES } from '@/lib/soul-mesh/N06Runtime';
+import { isSoulMeshMessage, type SoulMeshMessage } from '@/lib/soul-mesh/SoulMeshProtocol';
+import { ensureN06Runtime } from '@/lib/soul-mesh/N06Runtime';
+import { N06_CAPABILITIES, supportsN06Capability } from '@/lib/soul-mesh/N06Capabilities';
 
 const NUCLEUS_ID = 'N06' as const;
-const NUCLEI = new Set(['N01', 'N02', 'N03', 'N04', 'N05', 'N06']);
-const PEERS = ['N01', 'N02', 'N03', 'N04', 'N05'] as const;
+const MAX_BODY_BYTES = 1_000_000;
 
 function authorized(request: Request) {
-  const token = process.env.SOUL_MESH_TOKEN;
-  return !token || request.headers.get('authorization') === `Bearer ${token}`;
+  const token = process.env.SOUL_MESH_TOKEN?.trim();
+  if (!token) return process.env.NODE_ENV !== 'production';
+  return request.headers.get('authorization') === `Bearer ${token}`;
+}
+
+function handlers() {
+  const runtime = ensureN06Runtime();
+  return Object.fromEntries(
+    N06_CAPABILITIES.map(capability => [
+      capability,
+      (payload: unknown) => runtime.execute(capability, payload),
+    ]),
+  );
 }
 
 export async function POST(request: Request) {
   if (!authorized(request)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const message = (await request.json().catch(() => null)) as SoulMeshMessage | null;
-  if (!message || message.target !== NUCLEUS_ID || !NUCLEI.has(message.source) || message.source === NUCLEUS_ID) {
-    return NextResponse.json({ error: 'INVALID_SOUL_MESH_MESSAGE' }, { status: 400 });
+  const contentLength = Number(request.headers.get('content-length') || 0);
+  if (contentLength > MAX_BODY_BYTES) {
+    return NextResponse.json({ error: 'SOUL_MESH_PAYLOAD_TOO_LARGE' }, { status: 413 });
   }
 
-  ensureN06Runtime();
+  const body = await request.json().catch(() => null);
+  if (!isSoulMeshMessage(body)) {
+    return NextResponse.json({ error: 'INVALID_SOUL_MESH_MESSAGE' }, { status: 400 });
+  }
+  if (body.target !== NUCLEUS_ID || body.source === NUCLEUS_ID) {
+    return NextResponse.json({ error: 'INVALID_SOUL_MESH_ROUTE' }, { status: 400 });
+  }
+  if (body.kind === 'request' && (!body.capability || !supportsN06Capability(body.capability))) {
+    return NextResponse.json({
+      error: 'CAPABILITY_NOT_SUPPORTED',
+      nucleus: NUCLEUS_ID,
+      capability: body.capability ?? null,
+      capabilities: [...N06_CAPABILITIES],
+    }, { status: 400 });
+  }
 
   try {
-    const response = await handleMeshMessage(message, {
-      'mesh.ping': async payload => ({ ok: true, handler: 'N06.mesh.ping', echoed: payload, processedAt: Date.now() }),
-      'mesh.describe': async () => ({
-        nucleus: NUCLEUS_ID,
-        peers: [...PEERS],
-        inChannels: PEERS.map(peer => `N06.IN.${peer}`),
-        outChannels: PEERS.map(peer => `N06.OUT.${peer}`),
-        capabilities: ['mesh.ping', 'mesh.describe', ...N06_CAPABILITIES],
-        status: 'online',
-      }),
-      'ai-pilot': async payload => ensureN06Runtime().execute({ capability: 'ai-pilot', input: payload }),
-      'context-orchestration': async payload => ensureN06Runtime().execute({ capability: 'context-orchestration', input: payload }),
-      'streaming': async payload => ensureN06Runtime().execute({ capability: 'streaming', input: payload }),
-      'mesh-communication': async payload => ensureN06Runtime().execute({ capability: 'mesh-communication', input: payload }),
-    });
-
-    return NextResponse.json(response, { status: response.kind === 'error' ? 501 : 200 });
+    const response = await handleMeshMessage(body as SoulMeshMessage, handlers());
+    return NextResponse.json(response, { status: 200 });
   } catch (error) {
     return NextResponse.json({
       protocol: 'soul-mesh/1',
       id: crypto.randomUUID(),
-      correlationId: message.correlationId,
+      correlationId: body.correlationId,
       source: NUCLEUS_ID,
-      target: message.source,
+      target: body.source,
       kind: 'error',
-      capability: message.capability,
-      payload: { code: 'MESH_RUNTIME_ERROR', detail: error instanceof Error ? error.message : 'Unknown error' },
+      capability: body.capability,
+      payload: {
+        code: 'MESH_RUNTIME_ERROR',
+        detail: error instanceof Error ? error.message : 'Unknown error',
+      },
       timestamp: Date.now(),
     } satisfies SoulMeshMessage, { status: 500 });
   }
