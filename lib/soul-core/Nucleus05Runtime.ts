@@ -1,0 +1,24 @@
+import type { Nucleus05Context } from './Nucleus05Processor';
+import { nucleus05Processor } from './Nucleus05Processor';
+import { NUCLEUS_05_TOOL_IDS, createNucleus05Tools, type Nucleus05ToolContext } from './Nucleus05ToolRegistry';
+
+/** Attaches the existing tool implementations without duplicating them. */
+export function attachNucleus05Tools(context: Nucleus05ToolContext) {
+  const tools = createNucleus05Tools(context);
+  for (const id of NUCLEUS_05_TOOL_IDS) {
+    nucleus05Processor.registerHandler('tool-execution', async (input: unknown) => {
+      const request = input as { toolId?: string; args?: unknown };
+      if (!request.toolId || !Object.prototype.hasOwnProperty.call(tools, request.toolId)) {
+        throw new Error(`Unknown Nucleus 05 tool: ${request.toolId ?? 'undefined'}`);
+      }
+      const toolDefinition = tools[request.toolId as keyof typeof tools] as any;
+      if (!toolDefinition?.execute) throw new Error(`Tool is not executable: ${request.toolId}`);
+      return toolDefinition.execute(request.args);
+    });
+  }
+  return nucleus05Processor;
+}
+
+export function executeNucleus05Capability(input: unknown, context?: Nucleus05Context) {
+  return nucleus05Processor.execute({ capability: 'tool-execution', input }, context);
+}
