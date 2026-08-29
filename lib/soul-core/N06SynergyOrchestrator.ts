@@ -4,7 +4,10 @@ import { sendFromN06, type N06Peer } from '../soul-mesh/N06PeerAdapter';
 export type N06SynergyStep = { nucleus: N06Peer; capability: string; payload: unknown };
 export type N06SynergyResult = { correlationId: string; steps: Array<{ nucleus: N06Peer; capability: string; result: unknown }> };
 
-/** Cooperative execution: N06 can compose work across specialized peer IAs instead of duplicating their capabilities. */
+/**
+ * Cooperative execution: N06 composes specialized peer IAs instead of duplicating them.
+ * The supplied sequence is intentional: each step receives the previous result.
+ */
 export async function executeN06Synergy(steps: N06SynergyStep[], correlationId = randomUUID()): Promise<N06SynergyResult> {
   const results: N06SynergyResult['steps'] = [];
   let previous: unknown = undefined;
@@ -15,6 +18,15 @@ export async function executeN06Synergy(steps: N06SynergyStep[], correlationId =
     previous = result;
   }
   return { correlationId, steps: results };
+}
+
+/** Closes the N06↔N01 edge: N01 contributes device/bridge capabilities, N06 contributes planning. */
+export function composeN06WithN01(task: string) {
+  return executeN06Synergy([
+    { nucleus: 'N01', capability: 'mesh.health', payload: { request: 'Check N01 bridge/device readiness.' } },
+    { nucleus: 'N06', capability: 'pilot.plan', payload: { task } },
+    { nucleus: 'N01', capability: 'mesh.delegate', payload: { target: 'N02', capability: 'inference.reason', payload: { task } } },
+  ]);
 }
 
 export async function n06CognitiveToolChain(prompt: string) {
