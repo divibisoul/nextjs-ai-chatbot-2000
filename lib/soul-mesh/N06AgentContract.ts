@@ -1,4 +1,4 @@
-import type { SoulMeshMessage } from './endpoint';
+import type { SoulMeshMessage } from './SoulMeshProtocol';
 
 export type N06Agent = {
   id: string;
