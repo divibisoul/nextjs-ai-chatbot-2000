@@ -20,9 +20,9 @@ export type PairStageResult = {
 };
 
 /**
- * Reverse half of the ordered N05/N06 pair. N06 can request N05 reasoning,
- * then use the returned inference as planning/validation input. The contract
- * is intentionally additive and preserves the existing N06 Mesh adapter.
+ * Reverse half of the ordered N05/N06 pair. N06 requests N05 inference and
+ * can request a second validation pass. The existing N06 Mesh adapter remains
+ * the only transport boundary.
  */
 export class N06N05PairStage {
   constructor(private readonly synergy = new N06N05AgentSynergy()) {}
@@ -30,20 +30,21 @@ export class N06N05PairStage {
   async execute(input: PairStageInput): Promise<PairStageResult> {
     const correlationId = input.correlationId ?? randomUUID();
     const traceId = input.traceId ?? randomUUID();
-    const result = await this.synergy.planWithReasoning({
+    const result = await this.synergy.planThenReason({
       task: input.task,
       input: input.input,
       requireValidation: input.requireValidation ?? true,
       correlationId,
       traceId,
     });
+    const minimumStages = input.requireValidation === false ? 1 : 2;
     return {
       stage: 'N06-N05',
       source: 'N06',
       target: 'N05',
       correlationId,
       traceId,
-      completed: result.stages.length >= (input.requireValidation === false ? 2 : 3),
+      completed: result.stages.length >= minimumStages,
       stages: result.stages,
     };
   }
