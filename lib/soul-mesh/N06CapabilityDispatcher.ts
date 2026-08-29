@@ -1,12 +1,13 @@
 import { activateNucleus06Runtime } from '@/lib/soul-core/Nucleus05Runtime';
-import { nucleus05Processor } from '@/lib/soul-core/Nucleus05Processor';
+import { nucleus06Processor } from '@/lib/soul-core/Nucleus05Processor';
 import { NUCLEUS_05_TOOL_IDS, createNucleus05Tools, type Nucleus05ToolContext } from '@/lib/soul-core/Nucleus05ToolRegistry';
 import { supportsNucleus05Capability } from '@/lib/soul-core/Nucleus05Capabilities';
+import { getWeather } from '@/lib/ai/tools/get-weather';
 
 export type N06MeshExecutionContext = Partial<Nucleus05ToolContext> & { metadata?: Record<string, unknown> };
 
 export function getN06Capabilities(): readonly string[] {
-  return [...NUCLEUS_05_TOOL_IDS.map((id) => `tool:${id}`), ...nucleus05Processor.capabilities];
+  return [...NUCLEUS_05_TOOL_IDS.map((id) => `tool:${id}`), ...nucleus06Processor.capabilities];
 }
 
 function requireToolContext(context?: N06MeshExecutionContext): Nucleus05ToolContext {
@@ -16,6 +17,11 @@ function requireToolContext(context?: N06MeshExecutionContext): Nucleus05ToolCon
 
 export async function executeN06Capability(capability: string, payload: unknown, context?: N06MeshExecutionContext) {
   activateNucleus06Runtime();
+
+  if (capability === 'tool:getWeather') {
+    const args = payload && typeof payload === 'object' && 'args' in payload ? (payload as { args?: unknown }).args : payload;
+    return getWeather.execute(args as never);
+  }
 
   if (capability.startsWith('tool:')) {
     const toolId = capability.slice('tool:'.length);
@@ -28,7 +34,7 @@ export async function executeN06Capability(capability: string, payload: unknown,
   }
 
   if (supportsNucleus05Capability(capability)) {
-    return nucleus05Processor.execute({ capability: capability as never, input: payload }, context);
+    return nucleus06Processor.execute({ capability: capability as never, input: payload }, context);
   }
 
   throw new Error(`N06_CAPABILITY_NOT_REGISTERED:${capability}`);
