@@ -5,31 +5,29 @@ import { nucleus06Processor } from './Nucleus05Processor';
 
 function requireToolContext(context?: Nucleus06Context) {
   if (!context?.session || !context?.dataStream) throw new Error('N06_TOOL_CONTEXT_REQUIRED');
-  return { session: context.session as any, dataStream: context.dataStream as any };
+  return { session: context.session, dataStream: context.dataStream };
 }
 
-/** Activates capabilities through the application's existing native tools/runtime. */
 export function activateN06NativeCapabilities() {
   nucleus06Processor
-    .registerHandler('artifact-processing', async (input, context) => {
+    .registerHandler('support.artifacts', async (input, context) => {
       const value = (input && typeof input === 'object' ? input : {}) as { action?: string; title?: string; kind?: string; id?: string; description?: string };
       const toolContext = requireToolContext(context);
-      if (value.action === 'update') return updateDocument(toolContext).execute?.({ id: value.id ?? '', description: value.description ?? '' } as any);
-      return createDocument(toolContext).execute?.({ title: value.title ?? 'Untitled', kind: value.kind as any } as any);
+      if (value.action === 'update') return updateDocument(toolContext).execute?.({ id: value.id ?? '', description: value.description ?? '' });
+      return createDocument(toolContext).execute?.({ title: value.title ?? 'Untitled', kind: value.kind });
     })
-    .registerHandler('document-processing', async (input, context) => {
-      const value = (input && typeof input === 'object' ? input : {}) as { action?: 'create'|'update'; title?: string; kind?: string; id?: string; description?: string };
+    .registerHandler('support.documents', async (input, context) => {
+      const value = (input && typeof input === 'object' ? input : {}) as { action?: string; title?: string; kind?: string; id?: string; description?: string };
       const toolContext = requireToolContext(context);
-      if (value.action === 'update') return updateDocument(toolContext).execute?.({ id: value.id ?? '', description: value.description ?? '' } as any);
-      return createDocument(toolContext).execute?.({ title: value.title ?? 'Untitled', kind: value.kind as any } as any);
+      if (value.action === 'update') return updateDocument(toolContext).execute?.({ id: value.id ?? '', description: value.description ?? '' });
+      return createDocument(toolContext).execute?.({ title: value.title ?? 'Untitled', kind: value.kind });
     })
-    .registerHandler('context-orchestration', async (input, context) => ({ input, metadata: context?.metadata ?? {}, nucleus: 'N06' }))
-    .registerHandler('streaming', async (input, context) => {
-      if (context?.dataStream) context.dataStream.write({ type: 'data-kind', data: 'n06-stream', transient: true } as any);
+    .registerHandler('support.context', async (input, context) => ({ input, metadata: context?.metadata ?? {}, nucleus: 'N06' }))
+    .registerHandler('support.streaming', async (input, context) => {
+      if (context?.dataStream) context.dataStream.write({ type: 'data-kind', data: 'n06-stream', transient: true });
       return input;
     })
-    .registerHandler('mesh-communication', async (input) => ({ accepted: true, protocol: 'soul-mesh/1', nucleus: 'N06', payload: input }));
-
+    .registerHandler('support.mesh', async (input) => ({ accepted: true, protocol: 'soul-mesh/1', nucleus: 'N06', payload: input }));
   return nucleus06Processor;
 }
 
