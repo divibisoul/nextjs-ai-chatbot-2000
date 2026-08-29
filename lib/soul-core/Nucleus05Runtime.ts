@@ -1,14 +1,14 @@
-import type { Nucleus05Context } from './Nucleus05Processor';
-import { nucleus05Processor } from './Nucleus05Processor';
+import type { Nucleus06Context, Nucleus06Handler } from './Nucleus05Processor';
+import { nucleus06Processor } from './Nucleus05Processor';
 import { NUCLEUS_05_TOOL_IDS, createNucleus05Tools, type Nucleus05ToolContext } from './Nucleus05ToolRegistry';
 
-function requireToolContext(context?: Nucleus05Context): Nucleus05ToolContext {
+function requireToolContext(context?: Nucleus06Context): Nucleus05ToolContext {
   if (!context?.session || !context?.dataStream) throw new Error('N06_TOOL_CONTEXT_REQUIRED');
   return { session: context.session as Nucleus05ToolContext['session'], dataStream: context.dataStream as Nucleus05ToolContext['dataStream'] };
 }
 
-function registerOnce(capability: Parameters<typeof nucleus05Processor.registerHandler>[0], handler: Parameters<typeof nucleus05Processor.registerHandler>[1]) {
-  if (!nucleus05Processor.listHandlers().includes(capability)) nucleus05Processor.registerHandler(capability, handler);
+function registerOnce(capability: Parameters<typeof nucleus06Processor.registerHandler>[0], handler: Nucleus06Handler) {
+  if (!nucleus06Processor.listHandlers().includes(capability)) nucleus06Processor.registerHandler(capability, handler);
 }
 
 export function activateNucleus06Runtime() {
@@ -24,43 +24,39 @@ export function activateNucleus06Runtime() {
   registerOnce('artifact-processing', async (input, context) => {
     const request = (input && typeof input === 'object' ? input : {}) as { action?: 'create' | 'update'; title?: string; kind?: string; id?: string; description?: string };
     const tools = createNucleus05Tools(requireToolContext(context));
-    if (request.action === 'update') return (tools.updateDocument as any).execute({ id: request.id ?? '', description: request.description ?? '' });
-    return (tools.createDocument as any).execute({ title: request.title ?? 'Untitled', kind: request.kind });
+    if (request.action === 'update') return tools.updateDocument.execute({ id: request.id ?? '', description: request.description ?? '' });
+    return tools.createDocument.execute({ title: request.title ?? 'Untitled', kind: request.kind });
   });
 
   registerOnce('document-processing', async (input, context) => {
     const request = (input && typeof input === 'object' ? input : {}) as { action?: 'create' | 'update'; title?: string; kind?: string; id?: string; description?: string };
     const tools = createNucleus05Tools(requireToolContext(context));
-    if (request.action === 'update') return (tools.updateDocument as any).execute({ id: request.id ?? '', description: request.description ?? '' });
-    return (tools.createDocument as any).execute({ title: request.title ?? 'Untitled', kind: request.kind });
+    if (request.action === 'update') return tools.updateDocument.execute({ id: request.id ?? '', description: request.description ?? '' });
+    return tools.createDocument.execute({ title: request.title ?? 'Untitled', kind: request.kind });
   });
 
   registerOnce('context-orchestration', async (input, context) => ({ nucleus: 'N06', input, metadata: context?.metadata ?? {} }));
+
   registerOnce('streaming', async (input, context) => {
-    if (context?.dataStream && typeof (context.dataStream as any).write === 'function') (context.dataStream as any).write({ type: 'data-kind', data: 'n06-stream', transient: true });
+    if (context?.dataStream && typeof (context.dataStream as { write?: unknown }).write === 'function') {
+      (context.dataStream as { write: (value: unknown) => void }).write({ type: 'data-kind', data: 'n06-stream', transient: true });
+    }
     return input;
   });
+
   registerOnce('mesh-communication', async (input) => ({ nucleus: 'N06', protocol: 'soul-mesh/1', accepted: true, payload: input }));
-  return nucleus05Processor;
+  return nucleus06Processor;
 }
 
-export function getN06DeclaredCapabilities(): readonly string[] {
-  return [...nucleus05Processor.capabilities];
-}
+export function getN06DeclaredCapabilities(): readonly string[] { return [...nucleus06Processor.capabilities]; }
+export function getN06ExecutableCapabilities(): readonly string[] { activateNucleus06Runtime(); return [...nucleus06Processor.executableCapabilities()]; }
+export function attachNucleus06Tools(context: Nucleus05ToolContext) { activateNucleus06Runtime(); return nucleus06Processor; }
+export function executeNucleus06Capability(input: unknown, context?: Nucleus06Context) { activateNucleus06Runtime(); return nucleus06Processor.execute({ capability: 'tool-execution', input }, context); }
 
-export function getN06ExecutableCapabilities(): readonly string[] {
-  activateNucleus06Runtime();
-  return [...nucleus05Processor.executableCapabilities()];
-}
-
-export function attachNucleus05Tools(context: Nucleus05ToolContext) {
-  activateNucleus06Runtime();
-  return nucleus05Processor;
-}
-
-export function executeNucleus05Capability(input: unknown, context?: Nucleus05Context) {
-  activateNucleus06Runtime();
-  return nucleus05Processor.execute({ capability: 'tool-execution', input }, context);
-}
+// Backward-compatible exports for existing imports.
+export const attachNucleus05Tools = attachNucleus06Tools;
+export const executeNucleus05Capability = executeNucleus06Capability;
+export const getNucleus05Capabilities = getN06DeclaredCapabilities;
+export const getNucleus05ExecutableCapabilities = getN06ExecutableCapabilities;
 
 activateNucleus06Runtime();
