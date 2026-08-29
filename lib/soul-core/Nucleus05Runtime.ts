@@ -50,7 +50,7 @@ export function activateNucleus06Runtime() {
 
 export function getN06DeclaredCapabilities(): readonly string[] { return [...nucleus06Processor.capabilities]; }
 export function getN06ExecutableCapabilities(): readonly string[] { activateNucleus06Runtime(); return [...nucleus06Processor.executableCapabilities()]; }
-export function attachNucleus06Tools(context: Nucleus05ToolContext) { activateNucleus06Runtime(); return nucleus06Processor; }
+export function attachNucleus06Tools(_context: Nucleus05ToolContext) { activateNucleus06Runtime(); return nucleus06Processor; }
 export function executeNucleus06Capability(input: unknown, context?: Nucleus06Context) { activateNucleus06Runtime(); return nucleus06Processor.execute({ capability: 'tool-execution', input }, context); }
 
 // Backward-compatible exports for existing imports.
