@@ -8,8 +8,9 @@ const NUCLEUS_ID = 'N06' as const;
 const MAX_BODY_BYTES = 1_000_000;
 
 function authorized(request: Request) {
+  if (process.env.MESH_AUTH_DISABLED === 'true') return true;
   const token = process.env.SOUL_MESH_TOKEN?.trim();
-  if (!token) return process.env.NODE_ENV !== 'production';
+  if (!token) return false;
   return request.headers.get('authorization') === `Bearer ${token}`;
 }
 
