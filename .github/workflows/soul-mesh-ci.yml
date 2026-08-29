@@ -27,7 +27,9 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - name: Typecheck Soul Mesh
         run: pnpm exec tsc -p tsconfig.mesh.json --noEmit
+      - name: Run canonical N06 processor tests
+        run: pnpm exec tsx --test lib/soul-core/Nucleus06Processor.test.ts
       - name: Run N06 Mesh tests
         run: pnpm exec tsx --test lib/soul-mesh/N06Runtime.test.ts
-      - name: Run nucleus processor tests
+      - name: Run legacy compatibility tests
         run: pnpm run test:nucleus05
