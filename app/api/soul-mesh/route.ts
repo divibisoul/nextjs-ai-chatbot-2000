@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 import type { SoulMeshMessage } from '@/lib/soul-mesh/SoulMeshProtocol';
-import { executeN06Capability } from '@/lib/soul-mesh/N06CapabilityDispatcher';
+import { executeN06Capability, getN06Capabilities } from '@/lib/soul-mesh/N06CapabilityDispatcher';
 import { N06AgentRegistry } from '@/lib/soul-mesh/N06AgentRegistry';
-import { getN06DeclaredCapabilities, getN06ExecutableCapabilities } from '@/lib/soul-core/Nucleus05Runtime';
+import { nucleus06Processor } from '@/lib/soul-core/Nucleus05Processor';
 import { NUCLEUS_06_TOOL_IDS } from '@/lib/soul-core/Nucleus05ToolRegistry';
 
 const NUCLEUS_ID = 'N06' as const;
@@ -18,15 +18,21 @@ function authorized(request: Request) {
 
 function result(message: SoulMeshMessage, kind: 'response' | 'error', payload: unknown, status = 200) {
   return NextResponse.json({
-    protocol: 'soul-mesh/1', id: crypto.randomUUID(), correlationId: message.correlationId,
-    source: NUCLEUS_ID, target: message.source, kind, capability: message.capability,
-    payload, timestamp: Date.now(),
+    protocol: 'soul-mesh/1',
+    id: crypto.randomUUID(),
+    correlationId: message.correlationId,
+    source: NUCLEUS_ID,
+    target: message.source,
+    kind,
+    capability: message.capability,
+    payload,
+    timestamp: Date.now(),
   } satisfies SoulMeshMessage, { status });
 }
 
 function createN06Agents() {
   const registry = new N06AgentRegistry();
-  const executable = getN06ExecutableCapabilities();
+  const executable = nucleus06Processor.executableCapabilities();
   registry.register({
     id: 'N06-cognitive-agent',
     name: 'N06 Cognitive Agent',
@@ -45,38 +51,68 @@ function createN06Agents() {
     capabilities: ['mesh.ping', 'mesh.describe'],
     execute: (message) => message.capability === 'mesh.ping'
       ? { ok: true, nucleus: NUCLEUS_ID, processedAt: Date.now() }
-      : { nucleus: NUCLEUS_ID, peers: [...PEERS], declaredCapabilities: getN06DeclaredCapabilities(), executableCapabilities: executable, agents: registry.describe(), inChannels: PEERS.map(peer => `N06.IN.${peer}`), outChannels: PEERS.map(peer => `N06.OUT.${peer}`) },
+      : {
+          nucleus: NUCLEUS_ID,
+          peers: [...PEERS],
+          declaredCapabilities: getN06Capabilities(),
+          executableCapabilities: executable,
+          agents: registry.describe(),
+          inChannels: PEERS.map((peer) => `N06.IN.${peer}`),
+          outChannels: PEERS.map((peer) => `N06.OUT.${peer}`),
+        },
   });
   return registry;
 }
 
 export async function POST(request: Request) {
   if (!authorized(request)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
   const raw = await request.text();
-  if (new TextEncoder().encode(raw).byteLength > MAX_PAYLOAD_BYTES) return NextResponse.json({ error: 'SOUL_MESH_PAYLOAD_TOO_LARGE' }, { status: 413 });
+  if (new TextEncoder().encode(raw).byteLength > MAX_PAYLOAD_BYTES) {
+    return NextResponse.json({ error: 'SOUL_MESH_PAYLOAD_TOO_LARGE' }, { status: 413 });
+  }
 
   let message: SoulMeshMessage;
-  try { message = JSON.parse(raw) as SoulMeshMessage; }
-  catch { return NextResponse.json({ error: 'INVALID_SOUL_MESH_JSON' }, { status: 400 }); }
+  try {
+    message = JSON.parse(raw) as SoulMeshMessage;
+  } catch {
+    return NextResponse.json({ error: 'INVALID_SOUL_MESH_JSON' }, { status: 400 });
+  }
 
-  const valid = message && message.protocol === 'soul-mesh/1'
+  const valid = Boolean(message)
+    && message.protocol === 'soul-mesh/1'
     && typeof message.id === 'string' && message.id.length > 0
     && typeof message.correlationId === 'string' && message.correlationId.length > 0
-    && NUCLEI.has(message.source) && message.target === NUCLEUS_ID && message.source !== NUCLEUS_ID
-    && typeof message.capability === 'string' && message.capability.length > 0
-    && Number.isFinite(message.timestamp) && Math.abs(Date.now() - message.timestamp) <= MAX_CLOCK_SKEW_MS;
+    && NUCLEI.has(message.source)
+    && message.target === NUCLEUS_ID
+    && message.source !== NUCLEUS_ID
+    && typeof message.capability === 'string'
+    && message.capability.length > 0
+    && Number.isFinite(message.timestamp)
+    && Math.abs(Date.now() - message.timestamp) <= MAX_CLOCK_SKEW_MS;
 
   if (!valid) return NextResponse.json({ error: 'INVALID_SOUL_MESH_MESSAGE' }, { status: 400 });
-  if (message.kind !== 'request') return NextResponse.json({ accepted: true, correlationId: message.correlationId, source: NUCLEUS_ID, target: message.source });
+  if (message.kind !== 'request') {
+    return NextResponse.json({
+      accepted: true,
+      correlationId: message.correlationId,
+      source: NUCLEUS_ID,
+      target: message.source,
+    });
+  }
 
   const agents = createN06Agents();
   try {
-    return result(message, 'response', await agents.execute(message));
+    const response = await agents.execute(message);
+    return result(message, 'response', response);
   } catch (error) {
     const detail = error instanceof Error ? error.message : String(error);
-    const code = detail.startsWith('CAPABILITY_HANDLER_NOT_REGISTERED') ? 'CAPABILITY_HANDLER_NOT_REGISTERED'
+    const code = detail.startsWith('N06_CAPABILITY_DENIED') ? 'CAPABILITY_DENIED'
+      : detail.startsWith('CAPABILITY_HANDLER_NOT_REGISTERED') ? 'CAPABILITY_NOT_IMPLEMENTED'
       : detail.startsWith('UNKNOWN_TOOL') ? 'UNKNOWN_TOOL'
-      : detail === 'N06_TOOL_CONTEXT_REQUIRED' ? 'N06_TOOL_CONTEXT_REQUIRED' : 'CAPABILITY_EXECUTION_ERROR';
-    return result(message, 'error', { code, message: detail }, code === 'CAPABILITY_HANDLER_NOT_REGISTERED' ? 501 : 500);
+      : detail === 'N06_TOOL_CONTEXT_REQUIRED' ? 'CAPABILITY_CONTEXT_REQUIRED'
+      : 'CAPABILITY_EXECUTION_ERROR';
+    const status = code === 'CAPABILITY_NOT_IMPLEMENTED' ? 501 : code === 'CAPABILITY_DENIED' ? 403 : 500;
+    return result(message, 'error', { code, message: detail }, status);
   }
 }
