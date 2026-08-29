@@ -20,3 +20,5 @@ jobs:
         run: pnpm exec tsc -p tsconfig.mesh.json --noEmit
       - name: Run nucleus processor tests
         run: pnpm run test:nucleus05
+      - name: Run N06 cognitive runtime tests
+        run: pnpm run test:nucleus06
