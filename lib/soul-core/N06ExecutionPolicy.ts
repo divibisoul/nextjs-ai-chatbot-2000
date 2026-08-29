@@ -1,13 +1,11 @@
 import { NUCLEUS_06_CAPABILITIES, supportsNucleus06Capability } from './Nucleus06Capabilities';
+import { NUCLEUS_06_TOOL_IDS } from './Nucleus05ToolRegistry';
 
-export interface N06ExecutionPolicy {
-  maxSteps: number;
-  allowedCapabilities: readonly string[];
-}
+export interface N06ExecutionPolicy { maxSteps: number; allowedCapabilities: readonly string[]; }
 
 export const DEFAULT_N06_EXECUTION_POLICY: N06ExecutionPolicy = {
   maxSteps: 5,
-  allowedCapabilities: NUCLEUS_06_CAPABILITIES,
+  allowedCapabilities: [...NUCLEUS_06_CAPABILITIES, ...NUCLEUS_06_TOOL_IDS.map((id) => `tool:${id}`)],
 };
 
 export function authorizeN06Capability(capability: string, policy = DEFAULT_N06_EXECUTION_POLICY): boolean {
