@@ -25,10 +25,6 @@ export type Nucleus06Handler = (
   context?: Nucleus06Context,
 ) => Promise<unknown>;
 
-/**
- * N06 runtime boundary. The provider-specific AI remains an adapter;
- * Soul owns orchestration and inter-core interoperability.
- */
 export class Nucleus06Processor {
   readonly id = 'nucleus-06' as const;
   readonly capabilities = NUCLEUS_06_CAPABILITIES;
@@ -49,13 +45,13 @@ export class Nucleus06Processor {
     return this.pilot;
   }
 
-  listHandlers() {
+  listHandlers(): Nucleus06Capability[] {
     return [...this.handlers.keys()];
   }
 
-  executableCapabilities() {
+  executableCapabilities(): Nucleus06Capability[] {
     return this.capabilities.filter((capability) =>
-      capability === 'ai-pilot' || capability === 'support.ai-pilot'
+      capability === 'support.ai-pilot'
         ? Boolean(this.pilot)
         : this.handlers.has(capability),
     );
@@ -73,28 +69,15 @@ export class Nucleus06Processor {
       throw new Error(`Unsupported Nucleus 06 capability: ${request.capability}`);
     }
 
-    const canonicalAlias: Partial<Record<Nucleus06Capability, Nucleus06Capability>> = {
-      'support.context': 'context-orchestration',
-      'support.artifacts': 'artifact-processing',
-      'support.documents': 'document-processing',
-      'support.tool-execution': 'tool-execution',
-      'support.streaming': 'streaming',
-      'support.mesh': 'mesh-communication',
-      'support.ai-pilot': 'ai-pilot',
-    };
-    const resolved = canonicalAlias[request.capability] ?? request.capability;
-
-    if (resolved === 'ai-pilot') {
-      if (!this.pilot) {
-        throw new Error('No AI pilot is connected to Nucleus 06');
-      }
+    if (request.capability === 'support.ai-pilot') {
+      if (!this.pilot) throw new Error('No AI pilot is connected to Nucleus 06');
       return this.pilot.execute(request.input, context);
     }
 
-    const handler = this.handlers.get(resolved);
+    const handler = this.handlers.get(request.capability);
     if (!handler) {
       throw new Error(
-        `Capability is registered but has no runtime handler: ${resolved}`,
+        `Capability is registered but has no runtime handler: ${request.capability}`,
       );
     }
     return handler(request.input, context);
@@ -103,7 +86,6 @@ export class Nucleus06Processor {
 
 export const nucleus06Processor = new Nucleus06Processor();
 
-/** Backward-compatible aliases for existing Nucleus05 imports. */
 export type Nucleus05Context = Nucleus06Context;
 export type Nucleus05Capability = Nucleus06Capability;
 export type Nucleus05Request = Nucleus06Request;
