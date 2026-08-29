@@ -3,7 +3,8 @@ export const SOUL_NUCLEI = ['N01','N02','N03','N04','N05','N06'] as const;
 export type SoulNucleus = typeof SOUL_NUCLEI[number];
 export type SoulMeshKind = 'request' | 'response' | 'event' | 'error';
 export type SoulMeshTransportKind = 'IN_PROCESS' | 'WEBVIEW_BRIDGE' | 'LOOPBACK_HTTP' | 'HTTP' | 'REALTIME';
-export interface SoulMeshMessage<T=unknown>{protocol:typeof SOUL_MESH_PROTOCOL;id:string;correlationId:string;source:SoulNucleus;target:SoulNucleus;kind:SoulMeshKind;capability?:string;payload:T;timestamp:number;transport?:SoulMeshTransportKind;}
+export interface SoulMeshMeta { runtime?: string; transport?: string; encoding?: string; version?: string; nonce?: string; traceId?: string; }
+export interface SoulMeshMessage<T=unknown>{protocol:typeof SOUL_MESH_PROTOCOL;id:string;correlationId:string;source:SoulNucleus;target:SoulNucleus;kind:SoulMeshKind;capability?:string;payload:T;timestamp:number;transport?:SoulMeshTransportKind;meta?:SoulMeshMeta;}
 export interface SoulMeshTransport{send(message:SoulMeshMessage):Promise<void>;onMessage(handler:(message:SoulMeshMessage)=>void|Promise<void>):()=>void;}
 export function createSoulMeshMessage<T>(input:Omit<SoulMeshMessage<T>,'protocol'|'id'|'timestamp'>):SoulMeshMessage<T>{return{protocol:SOUL_MESH_PROTOCOL,id:crypto.randomUUID(),timestamp:Date.now(),...input};}
 export function validateSoulMeshMessage(value:unknown):asserts value is SoulMeshMessage{
@@ -19,5 +20,6 @@ export function validateSoulMeshMessage(value:unknown):asserts value is SoulMesh
  if(typeof m.timestamp!=='number'||!Number.isFinite(m.timestamp))throw new Error('INVALID_TIMESTAMP');
  if(Math.abs(Date.now()-m.timestamp)>5*60*1000)throw new Error('MESSAGE_CLOCK_SKEW');
  if(m.transport!==undefined&&!['IN_PROCESS','WEBVIEW_BRIDGE','LOOPBACK_HTTP','HTTP','REALTIME'].includes(m.transport as string))throw new Error('INVALID_TRANSPORT');
+ if(m.meta!==undefined&&(!m.meta||typeof m.meta!=='object'))throw new Error('INVALID_META');
 }
 export function isSoulMeshMessage(value:unknown):value is SoulMeshMessage{try{validateSoulMeshMessage(value);return true;}catch{return false;}}
