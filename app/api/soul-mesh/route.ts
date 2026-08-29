@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import type { SoulMeshMessage } from '@/lib/soul-mesh/SoulMeshProtocol';
 import { executeN06Capability, getN06Capabilities } from '@/lib/soul-mesh/N06CapabilityDispatcher';
 import { N06AgentRegistry } from '@/lib/soul-mesh/N06AgentRegistry';
-import { nucleus06Processor } from '@/lib/soul-core/Nucleus05Processor';
+import { nucleus06Processor } from '@/lib/soul-core/N06Processor';
 import { NUCLEUS_06_TOOL_IDS } from '@/lib/soul-core/Nucleus05ToolRegistry';
 
 const NUCLEUS_ID = 'N06' as const;
@@ -10,6 +10,8 @@ const NUCLEI = new Set(['N01', 'N02', 'N03', 'N04', 'N05', 'N06']);
 const PEERS = ['N01', 'N02', 'N03', 'N04', 'N05'] as const;
 const MAX_PAYLOAD_BYTES = 1024 * 1024;
 const MAX_CLOCK_SKEW_MS = 5 * 60 * 1000;
+const MAX_ID_LENGTH = 200;
+const MAX_CAPABILITY_LENGTH = 200;
 
 function authorized(request: Request) {
   const token = process.env.SOUL_MESH_TOKEN;
@@ -64,6 +66,23 @@ function createN06Agents() {
   return registry;
 }
 
+function validMessage(message: unknown): message is SoulMeshMessage {
+  if (!message || typeof message !== 'object') return false;
+  const value = message as Record<string, unknown>;
+  return value.protocol === 'soul-mesh/1'
+    && typeof value.id === 'string' && value.id.length > 0 && value.id.length <= MAX_ID_LENGTH
+    && typeof value.correlationId === 'string' && value.correlationId.length > 0 && value.correlationId.length <= MAX_ID_LENGTH
+    && typeof value.source === 'string' && NUCLEI.has(value.source)
+    && value.target === NUCLEUS_ID
+    && value.source !== NUCLEUS_ID
+    && typeof value.kind === 'string'
+    && value.kind === 'request'
+    && typeof value.capability === 'string'
+    && value.capability.trim().length > 0 && value.capability.length <= MAX_CAPABILITY_LENGTH
+    && Number.isFinite(value.timestamp)
+    && Math.abs(Date.now() - Number(value.timestamp)) <= MAX_CLOCK_SKEW_MS;
+}
+
 export async function POST(request: Request) {
   if (!authorized(request)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
@@ -79,27 +98,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'INVALID_SOUL_MESH_JSON' }, { status: 400 });
   }
 
-  const valid = Boolean(message)
-    && message.protocol === 'soul-mesh/1'
-    && typeof message.id === 'string' && message.id.length > 0
-    && typeof message.correlationId === 'string' && message.correlationId.length > 0
-    && NUCLEI.has(message.source)
-    && message.target === NUCLEUS_ID
-    && message.source !== NUCLEUS_ID
-    && typeof message.capability === 'string'
-    && message.capability.length > 0
-    && Number.isFinite(message.timestamp)
-    && Math.abs(Date.now() - message.timestamp) <= MAX_CLOCK_SKEW_MS;
-
-  if (!valid) return NextResponse.json({ error: 'INVALID_SOUL_MESH_MESSAGE' }, { status: 400 });
-  if (message.kind !== 'request') {
-    return NextResponse.json({
-      accepted: true,
-      correlationId: message.correlationId,
-      source: NUCLEUS_ID,
-      target: message.source,
-    });
-  }
+  if (!validMessage(message)) return NextResponse.json({ error: 'INVALID_SOUL_MESH_MESSAGE' }, { status: 400 });
 
   const agents = createN06Agents();
   try {
