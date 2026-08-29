@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { sendFromN06, type N06Peer } from '../soul-mesh/N06PeerAdapter';
+import { n06Processor } from './N06Processor';
 
 export type N06SynergyStep = { nucleus: N06Peer; capability: string; payload: unknown };
 export type N06SynergyResult = { correlationId: string; steps: Array<{ nucleus: N06Peer; capability: string; result: unknown }> };
@@ -20,13 +21,23 @@ export async function executeN06Synergy(steps: N06SynergyStep[], correlationId =
   return { correlationId, steps: results };
 }
 
-/** Closes the N06↔N01 edge: N01 contributes device/bridge capabilities, N06 contributes planning. */
-export function composeN06WithN01(task: string) {
-  return executeN06Synergy([
-    { nucleus: 'N01', capability: 'mesh.health', payload: { request: 'Check N01 bridge/device readiness.' } },
-    { nucleus: 'N06', capability: 'pilot.plan', payload: { task } },
-    { nucleus: 'N01', capability: 'mesh.delegate', payload: { target: 'N02', capability: 'inference.reason', payload: { task } } },
-  ]);
+/** Closes the ordered N06↔N01 edge while keeping N06's own pilot local. */
+export async function composeN06WithN01(task: string) {
+  const correlationId = randomUUID();
+  const results: N06SynergyResult['steps'] = [];
+  const readiness = await sendFromN06('N01', 'mesh.health', { request: 'Check N01 bridge/device readiness.', correlationId });
+  results.push({ nucleus: 'N01', capability: 'mesh.health', result: readiness });
+
+  const plan = await n06Processor.execute({ capability: 'support.ai-pilot', input: { task, previous: readiness, correlationId }, requestId: correlationId });
+  results.push({ nucleus: 'N06', capability: 'support.ai-pilot', result: plan });
+
+  const handoff = await sendFromN06('N01', 'mesh.delegate', {
+    target: 'N02',
+    capability: 'inference.reason',
+    payload: { task, plan, readiness, correlationId },
+  });
+  results.push({ nucleus: 'N01', capability: 'mesh.delegate', result: handoff });
+  return { correlationId, steps: results };
 }
 
 export async function n06CognitiveToolChain(prompt: string) {
