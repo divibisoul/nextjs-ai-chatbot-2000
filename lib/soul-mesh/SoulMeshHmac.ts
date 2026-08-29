@@ -15,13 +15,12 @@ function canonicalize(message: SoulMeshMessage, nonce: string): string {
     payload: message.payload,
     timestamp: message.timestamp,
     transport: message.transport ?? null,
+    meta: message.meta ?? null,
     nonce,
   });
 }
 
-export function createSoulMeshNonce(): string {
-  return randomBytes(24).toString('base64url');
-}
+export function createSoulMeshNonce(): string { return randomBytes(24).toString('base64url'); }
 
 export function signSoulMeshMessage(message: SoulMeshMessage, secret: string, nonce: string): string {
   if (!secret) throw new Error('SOUL_MESH_HMAC_SECRET_MISSING');
