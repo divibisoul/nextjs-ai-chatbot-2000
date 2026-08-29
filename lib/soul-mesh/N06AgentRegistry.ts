@@ -1,4 +1,4 @@
-import type { SoulMeshMessage } from './endpoint';
+import type { SoulMeshMessage } from './SoulMeshProtocol';
 import type { N06Agent } from './N06AgentContract';
 
 export class N06AgentRegistry {
