@@ -11,7 +11,6 @@ function registerOnce(capability: Parameters<typeof nucleus05Processor.registerH
   if (!nucleus05Processor.listHandlers().includes(capability)) nucleus05Processor.registerHandler(capability, handler);
 }
 
-/** Activates every N06 capability against the existing runtime/tool implementations. */
 export function activateNucleus06Runtime() {
   registerOnce('tool-execution', async (input, context) => {
     const request = (input && typeof input === 'object' ? input : {}) as { toolId?: string; args?: unknown };
@@ -43,6 +42,15 @@ export function activateNucleus06Runtime() {
   });
   registerOnce('mesh-communication', async (input) => ({ nucleus: 'N06', protocol: 'soul-mesh/1', accepted: true, payload: input }));
   return nucleus05Processor;
+}
+
+export function getN06DeclaredCapabilities(): readonly string[] {
+  return [...nucleus05Processor.capabilities];
+}
+
+export function getN06ExecutableCapabilities(): readonly string[] {
+  activateNucleus06Runtime();
+  return [...nucleus05Processor.executableCapabilities()];
 }
 
 export function attachNucleus05Tools(context: Nucleus05ToolContext) {
