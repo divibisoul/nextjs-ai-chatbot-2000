@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server';
 import type { SoulMeshMessage } from '@/lib/soul-mesh/SoulMeshProtocol';
 import { executeN06Capability } from '@/lib/soul-mesh/N06CapabilityDispatcher';
+import { N06AgentRegistry } from '@/lib/soul-mesh/N06AgentRegistry';
 import { getN06DeclaredCapabilities, getN06ExecutableCapabilities } from '@/lib/soul-core/Nucleus05Runtime';
+import { NUCLEUS_06_TOOL_IDS } from '@/lib/soul-core/Nucleus05ToolRegistry';
 
 const NUCLEUS_ID = 'N06' as const;
 const NUCLEI = new Set(['N01', 'N02', 'N03', 'N04', 'N05', 'N06']);
@@ -22,6 +24,32 @@ function result(message: SoulMeshMessage, kind: 'response' | 'error', payload: u
   } satisfies SoulMeshMessage, { status });
 }
 
+function createN06Agents() {
+  const registry = new N06AgentRegistry();
+  const executable = getN06ExecutableCapabilities();
+  registry.register({
+    id: 'N06-cognitive-agent',
+    name: 'N06 Cognitive Agent',
+    capabilities: executable,
+    execute: (message) => executeN06Capability(message.capability!, message.payload),
+  });
+  registry.register({
+    id: 'N06-tool-agent',
+    name: 'N06 Tool Agent',
+    capabilities: NUCLEUS_06_TOOL_IDS.map((id) => `tool:${id}`),
+    execute: (message) => executeN06Capability(message.capability!, message.payload),
+  });
+  registry.register({
+    id: 'N06-mesh-agent',
+    name: 'N06 Mesh Agent',
+    capabilities: ['mesh.ping', 'mesh.describe'],
+    execute: (message) => message.capability === 'mesh.ping'
+      ? { ok: true, nucleus: NUCLEUS_ID, processedAt: Date.now() }
+      : { nucleus: NUCLEUS_ID, peers: [...PEERS], declaredCapabilities: getN06DeclaredCapabilities(), executableCapabilities: executable, agents: registry.describe(), inChannels: PEERS.map(peer => `N06.IN.${peer}`), outChannels: PEERS.map(peer => `N06.OUT.${peer}`) },
+  });
+  return registry;
+}
+
 export async function POST(request: Request) {
   if (!authorized(request)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const raw = await request.text();
@@ -40,15 +68,10 @@ export async function POST(request: Request) {
 
   if (!valid) return NextResponse.json({ error: 'INVALID_SOUL_MESH_MESSAGE' }, { status: 400 });
   if (message.kind !== 'request') return NextResponse.json({ accepted: true, correlationId: message.correlationId, source: NUCLEUS_ID, target: message.source });
-  if (message.capability === 'mesh.ping') return result(message, 'response', { ok: true, nucleus: NUCLEUS_ID, processedAt: Date.now() });
-  if (message.capability === 'mesh.describe') return result(message, 'response', {
-    nucleus: NUCLEUS_ID, peers: [...PEERS],
-    inChannels: PEERS.map(peer => `N06.IN.${peer}`), outChannels: PEERS.map(peer => `N06.OUT.${peer}`),
-    declaredCapabilities: getN06DeclaredCapabilities(), executableCapabilities: getN06ExecutableCapabilities(),
-  });
 
+  const agents = createN06Agents();
   try {
-    return result(message, 'response', await executeN06Capability(message.capability, message.payload));
+    return result(message, 'response', await agents.execute(message));
   } catch (error) {
     const detail = error instanceof Error ? error.message : String(error);
     const code = detail.startsWith('CAPABILITY_HANDLER_NOT_REGISTERED') ? 'CAPABILITY_HANDLER_NOT_REGISTERED'
