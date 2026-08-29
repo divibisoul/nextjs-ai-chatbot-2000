@@ -28,13 +28,20 @@ function result(message: SoulMeshMessage, kind: 'response' | 'error', payload: u
   } satisfies SoulMeshMessage, { status });
 }
 
+function validateMessage(message: SoulMeshMessage): string | null {
+  if (message.protocol !== 'soul-mesh/1') return 'INVALID_SOUL_MESH_PROTOCOL';
+  if (!message.id || !message.correlationId) return 'MISSING_SOUL_MESH_ID';
+  if (!NUCLEI.has(message.source) || message.target !== NUCLEUS_ID || message.source === NUCLEUS_ID) return 'INVALID_SOUL_MESH_ROUTE';
+  if (message.kind === 'request' && (!message.capability || message.capability.length === 0)) return 'MISSING_SOUL_MESH_CAPABILITY';
+  if (!Number.isFinite(message.timestamp) || Math.abs(Date.now() - message.timestamp) > MAX_CLOCK_SKEW_MS) return 'INVALID_SOUL_MESH_TIMESTAMP';
+  return null;
+}
+
 export async function POST(request: Request) {
   if (!authorized(request)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const raw = await request.text();
-  if (new TextEncoder().encode(raw).byteLength > MAX_PAYLOAD_BYTES) {
-    return NextResponse.json({ error: 'SOUL_MESH_PAYLOAD_TOO_LARGE' }, { status: 413 });
-  }
+  if (new TextEncoder().encode(raw).byteLength > MAX_PAYLOAD_BYTES) return NextResponse.json({ error: 'SOUL_MESH_PAYLOAD_TOO_LARGE' }, { status: 413 });
 
   let message: SoulMeshMessage;
   try {
@@ -43,22 +50,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'INVALID_SOUL_MESH_JSON' }, { status: 400 });
   }
 
-  const valid = message
-    && message.protocol === 'soul-mesh/1'
-    && typeof message.id === 'string' && message.id.length > 0
-    && typeof message.correlationId === 'string' && message.correlationId.length > 0
-    && NUCLEI.has(message.source)
-    && message.target === NUCLEUS_ID
-    && message.source !== NUCLEUS_ID
-    && typeof message.capability === 'string' && message.capability.length > 0
-    && Number.isFinite(message.timestamp)
-    && Math.abs(Date.now() - message.timestamp) <= MAX_CLOCK_SKEW_MS;
-
-  if (!valid) return NextResponse.json({ error: 'INVALID_SOUL_MESH_MESSAGE' }, { status: 400 });
+  const validationError = validateMessage(message);
+  if (validationError) return NextResponse.json({ error: validationError }, { status: 400 });
   if (message.kind !== 'request') return NextResponse.json({ accepted: true, correlationId: message.correlationId, source: NUCLEUS_ID, target: message.source });
 
   if (message.capability === 'mesh.ping') return result(message, 'response', { ok: true, nucleus: NUCLEUS_ID, processedAt: Date.now() });
-
   if (message.capability === 'mesh.describe') {
     return result(message, 'response', {
       nucleus: NUCLEUS_ID,
@@ -71,14 +67,14 @@ export async function POST(request: Request) {
   }
 
   try {
-    return result(message, 'response', await executeN06Capability(message.capability, message.payload, undefined as never));
+    return result(message, 'response', await executeN06Capability(message.capability!, message.payload));
   } catch (error) {
     const detail = error instanceof Error ? error.message : String(error);
-    const code = detail.startsWith('CAPABILITY_HANDLER_NOT_REGISTERED')
-      ? 'CAPABILITY_HANDLER_NOT_REGISTERED'
-      : detail.startsWith('UNKNOWN_TOOL')
-        ? 'UNKNOWN_TOOL'
-        : 'CAPABILITY_EXECUTION_ERROR';
+    const code = detail.startsWith('N06_UNKNOWN_TOOL') ? 'UNKNOWN_TOOL'
+      : detail.startsWith('N06_TOOL_CONTEXT_REQUIRED') ? 'TOOL_CONTEXT_REQUIRED'
+        : detail.startsWith('N06_CAPABILITY_NOT_REGISTERED') ? 'CAPABILITY_HANDLER_NOT_REGISTERED'
+          : detail.startsWith('N06_CAPABILITY_NOT_READY') ? 'CAPABILITY_NOT_READY'
+            : 'CAPABILITY_EXECUTION_ERROR';
     return result(message, 'error', { code, message: detail }, code === 'CAPABILITY_HANDLER_NOT_REGISTERED' ? 501 : 500);
   }
 }
