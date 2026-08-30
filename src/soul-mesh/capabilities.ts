@@ -30,29 +30,34 @@ export interface ComposedCapability extends SoulCapability {
 const MESH_CONSUMERS = ['N01', 'N02', 'N03', 'N04', 'N05'];
 
 export const SOUL_CAPABILITIES: Record<string, SoulCapability> = {
-  chatTools: {
-    id: 'chat.tools', execution: 'WEB_SESSION', owner: 'N06', consumers: MESH_CONSUMERS,
-    agents: ['N06-tool-agent'], produces: ['tool.result'], latencyClass: 'LOW', composable: true,
+  supportContext: {
+    id: 'support.context', execution: 'MESH_DELEGATION', owner: 'N06', consumers: MESH_CONSUMERS,
+    agents: ['N06-cognitive-agent'], produces: ['chat.context'], latencyClass: 'LOW', composable: true,
   },
-  aiGeneration: {
-    id: 'ai.generate', execution: 'WEB_SESSION', owner: 'N06', consumers: MESH_CONSUMERS,
-    agents: ['N06-cognitive-agent'], produces: ['text/plain'], latencyClass: 'MEDIUM', composable: true,
+  supportArtifacts: {
+    id: 'support.artifacts', execution: 'MESH_DELEGATION', owner: 'N06', consumers: MESH_CONSUMERS,
+    agents: ['N06-cognitive-agent'], consumes: ['artifact.input'], produces: ['artifact.result'], latencyClass: 'MEDIUM', composable: true,
   },
-  history: {
-    id: 'chat.history', execution: 'WEB_SESSION', owner: 'N06', consumers: ['N01', 'N02', 'N03', 'N04', 'N05'],
-    produces: ['chat.context'], latencyClass: 'LOW', composable: true,
+  supportDocuments: {
+    id: 'support.documents', execution: 'MESH_DELEGATION', owner: 'N06', consumers: MESH_CONSUMERS,
+    agents: ['N06-cognitive-agent'], consumes: ['document.input'], produces: ['document.result'], latencyClass: 'MEDIUM', composable: true,
   },
-  cognitiveSynthesis: {
-    id: 'cognitive.synthesis', execution: 'MESH_DELEGATION', owner: 'N06', consumers: MESH_CONSUMERS,
-    agents: ['N06-cognitive-agent'], consumes: ['text/plain', 'chat.context', 'tool.result'], produces: ['text/plain'], latencyClass: 'MEDIUM', composable: true,
+  supportToolExecution: {
+    id: 'support.tool-execution', execution: 'MESH_DELEGATION', owner: 'N06', consumers: MESH_CONSUMERS,
+    agents: ['N06-cognitive-agent', 'N06-tool-agent'], tools: ['createDocument', 'updateDocument', 'getWeather', 'requestSuggestions'],
+    consumes: ['tool.request'], produces: ['tool.result'], latencyClass: 'MEDIUM', composable: true,
   },
-  delegatedPlanning: {
+  supportStreaming: {
+    id: 'support.streaming', execution: 'MESH_DELEGATION', owner: 'N06', consumers: MESH_CONSUMERS,
+    agents: ['N06-cognitive-agent'], consumes: ['stream.request'], produces: ['stream.result'], latencyClass: 'LOW', composable: true,
+  },
+  supportMesh: {
+    id: 'support.mesh', execution: 'MESH_DELEGATION', owner: 'N06', consumers: MESH_CONSUMERS,
+    agents: ['N06-mesh-agent'], consumes: ['soul.message'], produces: ['soul.response'], latencyClass: 'LOW', composable: true,
+  },
+  supportAiPilot: {
     id: 'support.ai-pilot', execution: 'MESH_DELEGATION', owner: 'N06', consumers: MESH_CONSUMERS,
     agents: ['N06-cognitive-agent'], consumes: ['text/plain', 'chat.context'], produces: ['task.plan'], latencyClass: 'MEDIUM', composable: true,
-  },
-  meshDiscovery: {
-    id: 'mesh.discovery', execution: 'MESH_DELEGATION', owner: 'N06', consumers: MESH_CONSUMERS,
-    agents: ['N06-mesh-agent'], produces: ['mesh.capability-catalog'], latencyClass: 'LOW', composable: true,
   },
 };
 
