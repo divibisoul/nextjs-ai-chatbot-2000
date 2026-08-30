@@ -2,7 +2,7 @@ import { composeCapabilities, soulCapability, type SoulCapability } from './capa
 
 export interface NucleusCapabilitySnapshot {
   nucleus: string;
-  capabilities: string[];
+  capabilities: Array<string | SoulCapability>;
   agents: Array<{ id: string; name: string; capabilities: string[] }>;
   tools?: string[];
 }
@@ -22,23 +22,44 @@ function overlap(left: string[], right: string[]): number {
   return left.filter(value => rightSet.has(value)).length;
 }
 
-function agentCoverage(capabilityIds: string[], agents: NucleusCapabilitySnapshot['agents']): string[] {
-  return agents.filter(agent => overlap(agent.capabilities, capabilityIds) > 0).map(agent => agent.id);
-}
-
 function normalize(values: string[] = []): string[] {
   return Array.from(new Set(values.filter(Boolean)));
 }
 
+function remoteCapabilities(snapshot: NucleusCapabilitySnapshot): SoulCapability[] {
+  return snapshot.capabilities
+    .map(item => typeof item === 'string' ? undefined : item)
+    .filter(Boolean) as SoulCapability[];
+}
+
+function remoteCapabilityIds(snapshot: NucleusCapabilitySnapshot): string[] {
+  return snapshot.capabilities.map(item => typeof item === 'string' ? item : item.id);
+}
+
+function agentCoverage(capabilityIds: string[], agents: NucleusCapabilitySnapshot['agents']): string[] {
+  return agents
+    .filter(agent => overlap(agent.capabilities, capabilityIds) > 0)
+    .map(agent => agent.id);
+}
+
+function compatible(primary: SoulCapability, candidate: SoulCapability): boolean {
+  return overlap(primary.consumes ?? [], candidate.produces ?? []) > 0 ||
+    overlap(primary.produces ?? [], candidate.consumes ?? []) > 0;
+}
+
+function compatibleTools(candidate: SoulCapability, tools: string[]): string[] {
+  if (tools.length === 0) return [];
+  const toolSet = new Set(tools);
+  return normalize((candidate.tools ?? []).filter(tool => toolSet.has(tool)));
+}
+
 export function evaluateN06Fusion(snapshot: NucleusCapabilitySnapshot): CapabilityFusion[] {
-  const local = [soulCapability('cognitive.synthesis'), soulCapability('support.ai-pilot')].filter(Boolean) as SoulCapability[];
-  const remote = snapshot.capabilities.map(soulCapability).filter(Boolean) as SoulCapability[];
+  const local = [soulCapability('support.ai-pilot'), soulCapability('support.context')].filter(Boolean) as SoulCapability[];
+  const remote = remoteCapabilities(snapshot);
+  const remoteIds = remoteCapabilityIds(snapshot);
 
   return local.flatMap(primary => {
-    const candidates = remote.filter(candidate =>
-      overlap(primary.consumes ?? [], candidate.produces ?? []) > 0 ||
-      overlap(primary.produces ?? [], candidate.consumes ?? []) > 0,
-    );
+    const candidates = remote.filter(candidate => compatible(primary, candidate));
     if (candidates.length === 0) return [];
 
     const supportingIds = normalize(candidates.map(candidate => candidate.id));
@@ -46,27 +67,28 @@ export function evaluateN06Fusion(snapshot: NucleusCapabilitySnapshot): Capabili
     if (!composed) return [];
 
     const agents = agentCoverage(supportingIds, snapshot.agents);
-    const tools = normalize(snapshot.tools);
-    const dataFlow = supportingIds.reduce((total, id) => {
-      const candidate = soulCapability(id);
-      return total + (candidate ? overlap(primary.consumes ?? [], candidate.produces ?? []) : 0);
-    }, 0);
-    const agentBonus = agents.length > 0 ? 0.1 : 0;
-    const toolBonus = tools.length > 0 ? 0.05 : 0;
-    const score = Math.min(1, 0.5 + dataFlow * 0.2 + agentBonus + toolBonus);
+    const tools = normalize(candidates.flatMap(candidate => compatibleTools(candidate, snapshot.tools ?? [])));
+    const dataFlow = candidates.reduce((total, candidate) => total +
+      overlap(primary.consumes ?? [], candidate.produces ?? []) +
+      overlap(primary.produces ?? [], candidate.consumes ?? []), 0);
+    const agentBonus = agents.length > 0 ? 0.15 : 0;
+    const toolBonus = tools.length > 0 ? 0.1 : 0;
+    const parallelBonus = candidates.some(candidate => candidate.execution === 'PARALLEL') ? 0.1 : 0;
+    const score = Math.min(1, 0.35 + dataFlow * 0.15 + agentBonus + toolBonus + parallelBonus);
 
     return [{
       primary: primary.id,
-      supporting: supportingIds,
+      supporting: supportingIds.length > 0 ? supportingIds : remoteIds,
       agents,
       tools,
       composed,
       score,
       reasons: [
-        'compatible input/output flow',
-        'composition preserves existing providers',
-        agents.length > 0 ? 'remote agents can execute supporting capabilities' : 'no remote agent executor declared',
-        tools.length > 0 ? 'remote tools are available to the composed workflow' : 'no remote tools declared',
+        `compatible data flow across ${snapshot.nucleus}`,
+        'composition preserves existing providers and Mesh contracts',
+        agents.length > 0 ? 'remote agents are explicitly mapped to supporting capabilities' : 'remote agent executor mapping is incomplete',
+        tools.length > 0 ? 'compatible remote tools participate in the composed workflow' : 'no directly compatible remote tools declared',
+        parallelBonus > 0 ? 'remote capability supports parallel execution' : 'parallel execution opportunity not declared by remote capability',
       ],
     }];
   });
