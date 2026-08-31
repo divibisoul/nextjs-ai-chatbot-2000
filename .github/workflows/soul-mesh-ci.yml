@@ -12,6 +12,7 @@ jobs:
       XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
       NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
       NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+      WEB3_STORAGE_TOKEN: ${{ secrets.WEB3_STORAGE_TOKEN }}
       POSTGRES_URL: ${{ secrets.POSTGRES_URL }}
       REDIS_URL: ${{ secrets.REDIS_URL }}
       SOUL_MESH_TOKEN: ${{ secrets.SOUL_MESH_TOKEN }}
@@ -32,3 +33,5 @@ jobs:
         run: pnpm run test:nucleus05
       - name: Run N06 cognitive runtime tests
         run: pnpm run test:nucleus06
+      - name: Web3.Storage adapter test
+        run: pnpm exec tsx --test lib/storage/web3-storage.test.ts
