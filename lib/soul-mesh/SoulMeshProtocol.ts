@@ -7,7 +7,7 @@ export type SoulMeshTransportKind = 'IN_PROCESS' | 'WEBVIEW_BRIDGE' | 'LOOPBACK_
 export interface SoulMeshMeta { runtime?: string; transport?: string; encoding?: string; version?: string; nonce?: string; traceId?: string; }
 export interface SoulMeshMessage<T=unknown>{protocol:typeof SOUL_MESH_PROTOCOL;contractVersion:typeof SOUL_MESH_CONTRACT_VERSION;id:string;correlationId:string;source:SoulNucleus;target:SoulNucleus;kind:SoulMeshKind;capability?:string;payload:T;timestamp:number;transport?:SoulMeshTransportKind;meta?:SoulMeshMeta;}
 export interface SoulMeshTransport{send(message:SoulMeshMessage):Promise<void>;onMessage(handler:(message:SoulMeshMessage)=>void|Promise<void>):()=>void;}
-export function createSoulMeshMessage<T>(input:Omit<SoulMeshMessage<T>,'protocol'|'contractVersion'|'id'|'timestamp'> & {contractVersion?:string}):SoulMeshMessage<T>{return{protocol:SOUL_MESH_PROTOCOL,contractVersion:input.contractVersion??SOUL_MESH_CONTRACT_VERSION,id:crypto.randomUUID(),timestamp:Date.now(),...input};}
+export function createSoulMeshMessage<T>(input:Omit<SoulMeshMessage<T>,'protocol'|'contractVersion'|'id'|'timestamp'> & {contractVersion?:typeof SOUL_MESH_CONTRACT_VERSION}):SoulMeshMessage<T>{const id=crypto.randomUUID();return{protocol:SOUL_MESH_PROTOCOL,contractVersion:input.contractVersion??SOUL_MESH_CONTRACT_VERSION,id,timestamp:Date.now(),correlationId:input.correlationId||id,...input};}
 export function validateSoulMeshMessage(value:unknown):asserts value is SoulMeshMessage{
  if(!value||typeof value!=='object')throw new Error('INVALID_MESSAGE');
  const m=value as Record<string,unknown>;
@@ -20,7 +20,7 @@ export function validateSoulMeshMessage(value:unknown):asserts value is SoulMesh
  if(!['request','response','event','error'].includes(m.kind as string))throw new Error('INVALID_KIND');
  if((m.kind==='request'||m.kind==='response'||m.kind==='error')&&(typeof m.capability!=='string'||!m.capability.trim()||m.capability.length>200))throw new Error('CAPABILITY_REQUIRED');
  if(typeof m.timestamp!=='number'||!Number.isFinite(m.timestamp))throw new Error('INVALID_TIMESTAMP');
- if(Math.abs(Date.now()-m.timestamp)>5*60*1000)throw new Error('MESSAGE_CLOCK_SKEW');
+ if(Math.abs(Date.now()-m.timestamp)>30000)throw new Error('MESSAGE_CLOCK_SKEW');
  if(m.transport!==undefined&&!['IN_PROCESS','WEBVIEW_BRIDGE','LOOPBACK_HTTP','HTTP','REALTIME'].includes(m.transport as string))throw new Error('INVALID_TRANSPORT');
  if(m.meta!==undefined&&(!m.meta||typeof m.meta!=='object'))throw new Error('INVALID_META');
 }
