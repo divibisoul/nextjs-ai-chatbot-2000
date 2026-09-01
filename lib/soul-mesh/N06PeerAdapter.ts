@@ -4,18 +4,17 @@ import { createSoulMeshMessage, validateSoulMeshMessage } from './SoulMeshProtoc
 import { createSoulMeshNonce, signSoulMeshMessage } from './SoulMeshHmac';
 
 export type N06Peer=Exclude<SoulNucleus,'N06'>;
-/** N07 is structurally known but remains outside active peer execution until final commissioning. */
-const ACTIVE_PEERS:readonly Exclude<N06Peer,'N07'>[]=['N01','N02','N03','N04','N05'];
+/** N07 is now an active federated peer. Final fusion remains a separate commissioning stage. */
+const ACTIVE_PEERS:readonly N06Peer[]=['N01','N02','N03','N04','N05','N07'];
 const STRUCTURAL_PEERS:readonly N06Peer[]=['N01','N02','N03','N04','N05','N07'];
 const ENV:Record<N06Peer,string>={N01:'SOUL_MESH_N01_URL',N02:'SOUL_MESH_N02_URL',N03:'SOUL_MESH_N03_URL',N04:'SOUL_MESH_N04_URL',N05:'SOUL_MESH_N05_URL',N07:'SOUL_MESH_N07_URL'};
 const DEFAULT_TIMEOUT=15000, MAX_TIMEOUT=60000, MAX_RETRIES=2;
 function timeout(ms:number){return Math.min(MAX_TIMEOUT,Math.max(1000,Math.floor(ms)));}
-function meshSecret(){return process.env.SOUL_MESH_HMAC_SECRET?.trim()??'';}
+function meshSecret(){return (process.env.SOUL_MESH_HMAC_SECRET??process.env.SOUL_MESH_SECRET??'').trim();}
 export function getN06Peers(){return ACTIVE_PEERS.map(id=>({id,url:process.env[ENV[id]]?.trim().replace(/\/$/,'')??''}));}
 export function getN06StructuralPeers(){return STRUCTURAL_PEERS.map(id=>({id,url:process.env[ENV[id]]?.trim().replace(/\/$/,'')??''}));}
 export function createN06Request(target:N06Peer,capability:string,payload:unknown,correlationId=crypto.randomUUID(),traceId=correlationId):SoulMeshMessage{return createSoulMeshMessage({source:'N06',target,kind:'request',capability,payload,correlationId,transport:'HTTP',meta:{runtime:'nextjs-ai-chatbot-2000',transport:'HTTP',encoding:'json',version:'1.1.0',traceId}});}
 export async function sendFromN06(target:N06Peer,capability:string,payload:unknown,timeoutMs=DEFAULT_TIMEOUT,correlationId=crypto.randomUUID(),traceId=correlationId):Promise<unknown>{
- if(target==='N07')throw new Error('N07_NOT_COMMISSIONED');
  const peer=getN06Peers().find(p=>p.id===target);if(!peer?.url)throw new Error(`N06_PEER_NOT_CONFIGURED:${target}`);if(!capability.trim())throw new Error('N06_CAPABILITY_REQUIRED');
  const message=createN06Request(target,capability,payload,correlationId,traceId);let last:unknown;
  for(let attempt=0;attempt<=MAX_RETRIES;attempt++){
