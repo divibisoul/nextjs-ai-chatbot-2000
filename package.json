@@ -19,7 +19,9 @@
     "test": "export PLAYWRIGHT=True && pnpm exec playwright test",
     "test:nucleus05": "tsx --test lib/soul-core/Nucleus05Processor.test.ts",
     "test:nucleus06": "tsx --test lib/soul-core/Nucleus06Processor.test.ts",
-    "test:mesh-tools": "tsx --test lib/soul-mesh/N06MeshToolContext.test.ts"
+    "test:mesh-tools": "tsx --test lib/soul-mesh/N06MeshToolContext.test.ts",
+    "typecheck": "tsc --noEmit",
+    "typecheck:mesh": "tsc -p tsconfig.mesh.json --noEmit"
   },
   "dependencies": {
     "@ai-sdk/provider": "2.0.0-beta.1",
