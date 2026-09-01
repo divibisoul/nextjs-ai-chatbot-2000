@@ -6,8 +6,9 @@
     "strict": true,
     "skipLibCheck": true,
     "noEmit": true,
+    "jsx": "preserve",
     "baseUrl": ".",
     "paths": { "@/*": ["./*"] }
   },
-  "include": ["src/soul-mesh/endpoint.ts", "lib/soul-mesh/**/*.ts"]
+  "include": ["src/soul-mesh/endpoint.ts", "lib/soul-mesh/**/*.ts", "lib/types.ts"]
 }
