@@ -31,7 +31,7 @@ export class N06Processor {
   getPilot() { return this.pilot; }
   listHandlers() { return [...this.handlers.keys()]; }
   executableCapabilities() { return [...this.capabilities].filter(c => c === 'support.ai-pilot' ? Boolean(this.pilot) : this.handlers.has(c)); }
-  supports(capability: string): boolean { return Boolean(normalizeCapability(capability)); }
+  supports(capability: string): boolean { const canonical = normalizeCapability(capability); return canonical !== undefined && this.executableCapabilities().includes(canonical); }
   async execute(request: N06Request, context?: N06Context) {
     const canonical = normalizeCapability(request.capability);
     if (!canonical) throw new Error(`Unsupported Nucleus 06 capability: ${request.capability}`);
