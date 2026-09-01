@@ -12,6 +12,11 @@ interface RequestSuggestionsProps {
   dataStream: UIMessageStreamWriter<ChatMessage>;
 }
 
+type StreamSuggestion = Omit<
+  Suggestion,
+  'userId' | 'createdAt' | 'documentCreatedAt'
+>;
+
 export const requestSuggestions = ({
   session,
   dataStream,
@@ -32,9 +37,7 @@ export const requestSuggestions = ({
         };
       }
 
-      const suggestions: Array<
-        Omit<Suggestion, 'userId' | 'createdAt' | 'documentCreatedAt'>
-      > = [];
+      const suggestions: StreamSuggestion[] = [];
 
       const { elementStream } = streamObject({
         model: myProvider.languageModel('artifact-model'),
@@ -50,13 +53,12 @@ export const requestSuggestions = ({
       });
 
       for await (const element of elementStream) {
-        // @ts-ignore todo: fix type
-        const suggestion: Suggestion = {
+        const suggestion: StreamSuggestion = {
           originalText: element.originalSentence,
           suggestedText: element.suggestedSentence,
           description: element.description,
           id: generateUUID(),
-          documentId: documentId,
+          documentId,
           isResolved: false,
         };
 
