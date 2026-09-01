@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/app/(auth)/auth';
-import type { ChatMessage } from '@/lib/types';
 import type { SoulMeshMessage } from '@/lib/soul-mesh/SoulMeshProtocol';
 import { SOUL_MESH_CONTRACT_VERSION, validateSoulMeshMessage } from '@/lib/soul-mesh/SoulMeshProtocol';
 import { executeN06Capability, getN06Capabilities } from '@/lib/soul-mesh/N06CapabilityDispatcher';
@@ -12,7 +11,7 @@ import { verifySoulMeshMessage } from '@/lib/soul-mesh/SoulMeshHmac';
 import { createMeshToolSession, meshDataStream } from '@/lib/soul-mesh/N06MeshToolContext';
 
 const NUCLEUS_ID='N06' as const;
-const PEERS=['N01','N02','N03','N04','N05'] as const;
+const PEERS=['N01','N02','N03','N04','N05','N07'] as const;
 const MAX_PAYLOAD_BYTES=1024*1024;
 const MAX_CLOCK_SKEW_MS=30_000;
 const REPLAY_WINDOW_MS=5*60_000;
@@ -21,10 +20,10 @@ const RATE_WINDOW_MS=60_000;
 const seenRequests=new Map<string,number>();
 const peerBuckets=new Map<string,number[]>();
 function secret(){return process.env.SOUL_MESH_HMAC_SECRET ?? '';}
-function authorized(request:Request,message:SoulMeshMessage){const configured=secret();if(!configured)return process.env.NODE_ENV !== 'production';const nonce=request.headers.get('x-soul-mesh-nonce') ?? '';const hmac=request.headers.get('x-soul-mesh-hmac') ?? '';return verifySoulMeshMessage(message,configured,nonce,hmac);}
+function authorized(request:Request,message:SoulMeshMessage){const configured=secret();if(!configured)return process.env.NODE_ENV !== 'production';const nonce=request.headers.get('x-soul-mesh-nonce') ?? message.meta?.nonce ?? '';const hmac=request.headers.get('x-soul-mesh-hmac') ?? '';return verifySoulMeshMessage(message,configured,nonce,hmac);}
 function acceptOnce(id:string):boolean{const now=Date.now();for(const [key,t] of seenRequests)if(now-t>REPLAY_WINDOW_MS)seenRequests.delete(key);if(seenRequests.has(id))return false;seenRequests.set(id,now);return true;}
 function rateAllowed(peer:string):boolean{const now=Date.now();const recent=(peerBuckets.get(peer)??[]).filter(t=>now-t<RATE_WINDOW_MS);if(recent.length>=RATE_LIMIT){peerBuckets.set(peer,recent);return false;}recent.push(now);peerBuckets.set(peer,recent);return true;}
-function result(message:SoulMeshMessage,kind:'response'|'error',payload:unknown,status=200){return NextResponse.json({protocol:'soul-mesh/1',contractVersion:SOUL_MESH_CONTRACT_VERSION,id:crypto.randomUUID(),correlationId:message.correlationId,source:NUCLEUS_ID,target:message.source,kind,capability:message.capability,payload,timestamp:Date.now(),transport:'HTTP'} satisfies SoulMeshMessage,{status});}
+function result(message:SoulMeshMessage,kind:'response'|'error',payload:unknown,status=200){return NextResponse.json({protocol:'soul-mesh/1',contractVersion:SOUL_MESH_CONTRACT_VERSION,id:crypto.randomUUID(),correlationId:message.correlationId,source:NUCLEUS_ID,target:message.source,kind,capability:message.capability,payload,timestamp:Date.now(),transport:'HTTP',meta:{runtime:'nextjs-ai-chatbot-2000',transport:'HTTP',encoding:'json',version:SOUL_MESH_CONTRACT_VERSION,nonce:crypto.randomUUID(),traceId:message.correlationId}} satisfies SoulMeshMessage,{status});}
 function createN06Agents(context?:N06Context){const registry=new N06AgentRegistry();const executable=n06Processor.executableCapabilities();registry.register({id:'N06-cognitive-agent',name:'N06 Cognitive Agent',capabilities:executable,execute:m=>executeN06Capability(m.capability!,m.payload,context)});registry.register({id:'N06-tool-agent',name:'N06 Tool Agent',capabilities:NUCLEUS_06_TOOL_IDS.map(id=>`tool:${id}`),execute:m=>executeN06Capability(m.capability!,m.payload,context)});registry.register({id:'N06-mesh-agent',name:'N06 Mesh Agent',capabilities:['mesh.ping','mesh.describe','mesh.discovery'],execute:async m=>m.capability==='mesh.ping'?{ok:true,nucleus:NUCLEUS_ID,processedAt:Date.now()}:m.capability==='mesh.discovery'?{nucleus:NUCLEUS_ID,peers:await probeAllN06Peers()}:{nucleus:NUCLEUS_ID,peers:[...PEERS],declaredCapabilities:getN06Capabilities(),executableCapabilities:executable,agents:registry.describe(),inChannels:PEERS.map(peer=>`N06.IN.${peer}`),outChannels:PEERS.map(peer=>`N06.OUT.${peer}`)}});return registry;}
 function validMessage(message:unknown):message is SoulMeshMessage{try{validateSoulMeshMessage(message);const value=message as SoulMeshMessage;return value.target===NUCLEUS_ID&&value.source!==NUCLEUS_ID&&value.kind==='request'&&typeof value.capability==='string'&&Math.abs(Date.now()-value.timestamp)<=MAX_CLOCK_SKEW_MS;}catch{return false;}}
 export async function GET(){return NextResponse.json({ok:true,nucleus:NUCLEUS_ID,protocol:'soul-mesh/1',contractVersion:SOUL_MESH_CONTRACT_VERSION,peers:[...PEERS],capabilities:getN06Capabilities(),executableCapabilities:n06Processor.executableCapabilities(),agents:createN06Agents().describe(),channels:{in:PEERS.map(p=>`N06.IN.${p}`),out:PEERS.map(p=>`N06.OUT.${p}`)}});}
