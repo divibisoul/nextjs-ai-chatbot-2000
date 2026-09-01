@@ -1,7 +1,7 @@
 import type { SoulNucleus } from './SoulMeshProtocol';
 
-/** Canonical N06 peer set. Repository names are transport/deployment metadata, never protocol identities. */
-export const SOUL_MESH_PEERS: readonly SoulNucleus[] = ['N01', 'N02', 'N03', 'N04', 'N05'];
+/** Canonical N06 peer set. Repository names are deployment metadata; protocol identity is the nucleus ID. */
+export const SOUL_MESH_PEERS: readonly SoulNucleus[] = ['N01', 'N02', 'N03', 'N04', 'N05', 'N07'];
 export type SoulMeshPeer = (typeof SOUL_MESH_PEERS)[number];
 export type SoulMeshDirection = 'in' | 'out';
 export type SoulMeshPeerRoute = { peer: SoulMeshPeer; direction: SoulMeshDirection; enabled: boolean; url: string; inboundPath: string; healthPath: string };
@@ -9,10 +9,11 @@ export type SoulMeshPeerRoute = { peer: SoulMeshPeer; direction: SoulMeshDirecti
 const envUrl = (peer: SoulMeshPeer) => (process.env[`SOUL_MESH_${peer}_URL`] ?? '').replace(/\/$/, '');
 
 export const R6_PEER_ROUTES: SoulMeshPeerRoute[] = SOUL_MESH_PEERS.flatMap((peer) => [
-  { peer, direction: 'in' as const, enabled: true, url: envUrl(peer), inboundPath: '/mesh/in', healthPath: '/mesh/health' },
-  { peer, direction: 'out' as const, enabled: true, url: envUrl(peer), inboundPath: '/mesh/in', healthPath: '/mesh/health' },
+  { peer, direction: 'in' as const, enabled: true, url: envUrl(peer), inboundPath: '/api/soul-mesh', healthPath: '/api/soul-mesh' },
+  { peer, direction: 'out' as const, enabled: true, url: envUrl(peer), inboundPath: '/api/soul-mesh', healthPath: '/api/soul-mesh' },
 ]);
 
+export const R7_PEER_ROUTES = R6_PEER_ROUTES;
 export const R5_PEER_ROUTES = R6_PEER_ROUTES;
 
 export function peerRoutes(peer: SoulMeshPeer): SoulMeshPeerRoute[] { return R6_PEER_ROUTES.filter((route) => route.peer === peer); }
