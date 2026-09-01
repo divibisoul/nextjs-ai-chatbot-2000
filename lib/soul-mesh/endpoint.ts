@@ -1,10 +1,53 @@
 import { executeN06Capability, getN06Capabilities } from './N06CapabilityDispatcher';
+import {
+  SOUL_MESH_PROTOCOL,
+  SOUL_MESH_CONTRACT_VERSION,
+  type SoulMeshMessage,
+  type SoulNucleus,
+  validateSoulMeshMessage,
+} from './SoulMeshProtocol';
 
 export const NUCLEUS_ID = 'N06' as const;
-export const SOUL_MESH_PROTOCOL = 'soul-mesh/1' as const;
-export type SoulMeshMessage={protocol:typeof SOUL_MESH_PROTOCOL;id:string;correlationId:string;source:'N01'|'N02'|'N03'|'N04'|'N05'|'N06';target:'N01'|'N02'|'N03'|'N04'|'N05'|'N06';kind:'request'|'response'|'event'|'error'|'ack';capability?:string;payload:unknown;timestamp:number;transport?:string};
-const nuclei=new Set(['N01','N02','N03','N04','N05','N06']);
-export function validateMeshMessage(m:SoulMeshMessage){if(m.protocol!==SOUL_MESH_PROTOCOL)throw new Error('UNSUPPORTED_MESH_PROTOCOL');if(!m.id||!m.correlationId)throw new Error('MISSING_MESSAGE_ID');if(!nuclei.has(m.source)||!nuclei.has(m.target)||m.source===m.target)throw new Error('INVALID_NUCLEUS_ROUTE');if(!m.capability&&m.kind!=='event'&&m.kind!=='ack')throw new Error('MISSING_CAPABILITY');if(!Number.isFinite(m.timestamp))throw new Error('INVALID_TIMESTAMP');return true}
-export function getN06MeshCapabilities(){return getN06Capabilities()}
-function response(message:SoulMeshMessage,kind:SoulMeshMessage['kind'],payload:unknown):SoulMeshMessage{return{protocol:SOUL_MESH_PROTOCOL,id:crypto.randomUUID(),correlationId:message.correlationId,source:NUCLEUS_ID,target:message.source,kind,capability:message.capability,payload,timestamp:Date.now(),transport:message.transport}}
-export async function handleMeshMessage(message:SoulMeshMessage,handlers:Record<string,(payload:unknown)=>Promise<unknown>|unknown>={}){validateMeshMessage(message);if(message.target!==NUCLEUS_ID)throw new Error('WRONG_TARGET');if(message.kind==='ack'||message.kind!=='request')return message;const capability=message.capability!;const externalHandler=handlers[capability];try{const result=externalHandler?await externalHandler(message.payload):await executeN06Capability(capability,message.payload);return response(message,'response',result)}catch(error){return response(message,'error',{code:'CAPABILITY_EXECUTION_ERROR',capability,detail:error instanceof Error?error.message:'Unknown error'})}}
+export { SOUL_MESH_PROTOCOL, SOUL_MESH_CONTRACT_VERSION };
+export type NucleusId = SoulNucleus;
+
+export function validateMeshMessage(message: SoulMeshMessage, nucleusId: NucleusId = NUCLEUS_ID): true {
+  validateSoulMeshMessage(message);
+  if (message.target !== nucleusId) throw new Error('WRONG_TARGET');
+  return true;
+}
+
+export function getN06MeshCapabilities() { return getN06Capabilities(); }
+
+function response(message: SoulMeshMessage, kind: 'response' | 'error', payload: unknown): SoulMeshMessage {
+  return {
+    protocol: SOUL_MESH_PROTOCOL,
+    contractVersion: SOUL_MESH_CONTRACT_VERSION,
+    id: crypto.randomUUID(),
+    correlationId: message.correlationId,
+    source: NUCLEUS_ID,
+    target: message.source,
+    kind,
+    capability: message.capability,
+    payload,
+    timestamp: Date.now(),
+    transport: message.transport,
+    meta: { ...(message.meta ?? {}), version: SOUL_MESH_CONTRACT_VERSION, traceId: message.meta?.traceId ?? message.correlationId },
+  };
+}
+
+export async function handleMeshMessage(
+  message: SoulMeshMessage,
+  handlers: Record<string, (payload: unknown) => Promise<unknown> | unknown> = {},
+): Promise<SoulMeshMessage> {
+  validateMeshMessage(message);
+  if (message.kind !== 'request') return message;
+  const capability = message.capability;
+  if (!capability) throw new Error('CAPABILITY_REQUIRED');
+  try {
+    const result = handlers[capability] ? await handlers[capability](message.payload) : await executeN06Capability(capability, message.payload);
+    return response(message, 'response', result);
+  } catch (error) {
+    return response(message, 'error', { code: 'CAPABILITY_EXECUTION_ERROR', capability, detail: error instanceof Error ? error.message : 'Unknown error' });
+  }
+}
