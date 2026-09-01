@@ -1,14 +1,14 @@
 name: N06 Channel Contract
-
 on:
   push:
     branches: [main]
   pull_request:
     branches: [main]
-
+  workflow_dispatch:
 jobs:
   n06-channel-contract:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -19,6 +19,8 @@ jobs:
         with:
           node-version: 22
           cache: pnpm
-      - run: pnpm install --lockfile-only
       - run: pnpm install --frozen-lockfile
-      - run: pnpm exec tsx --test lib/soul-mesh/N06ChannelMatrix.test.ts
+      - name: Channel contract tests
+        run: pnpm exec tsx --test lib/soul-mesh/N06ChannelMatrix.test.ts
+      - name: N07 bridge contract tests
+        run: pnpm exec tsx --test lib/soul-neural/N07Bridge.test.ts
