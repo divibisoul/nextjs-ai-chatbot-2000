@@ -1,6 +1,6 @@
 export const SOUL_MESH_PROTOCOL = 'soul-mesh/1' as const;
 export const SOUL_MESH_CONTRACT_VERSION = '1.1.0' as const;
-export const SOUL_NUCLEI = ['N01','N02','N03','N04','N05','N06'] as const;
+export const SOUL_NUCLEI = ['N01','N02','N03','N04','N05','N06','N07'] as const;
 export type SoulNucleus = typeof SOUL_NUCLEI[number];
 export type SoulMeshKind = 'request' | 'response' | 'event' | 'error';
 export type SoulMeshTransportKind = 'IN_PROCESS' | 'WEBVIEW_BRIDGE' | 'LOOPBACK_HTTP' | 'HTTP' | 'REALTIME';
