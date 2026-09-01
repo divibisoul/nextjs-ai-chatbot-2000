@@ -14,18 +14,23 @@ Live runtime/E2E > automated integration test > unit/processor/race/build valida
 Record substantial-front start time; reassess long-running work; verify current HEAD, changed files, latest CI state and remaining blockers before delivery. Use coverage/health graphs as a delivery decision aid, never as a substitute for tests. Delivery requires a final repository re-audit whose state matches the report.
 
 ## Seven-nucleus topology
-Peers for N06 are N01, N02, N03, N04, N05 and N07. Six IN and six OUT logical channels exist for N06. N07 is deliberately the final commissioning stage and must receive stabilized ingress/egress, discovery, delegation, authorization, correlation, recovery, functions, tools and agents from the preceding fronts.
+Peers for N06 are N01, N02, N03, N04, N05 and N07. Six IN and six OUT logical channels exist for N06 in the final seven-node preparation. The six core nuclei still form 15 unordered peer pairs / 30 directed logical links. N07 is deliberately the final commissioning stage and must receive stabilized ingress/egress, discovery, delegation, authorization, correlation, recovery, functions, tools and agents from the preceding fronts.
 
 ## Required order
-Stabilize N06↔N05 and N01↔N06 first. Then complete N01↔N06↔N07 as the final fusion stage. N07 remains an independent AI runtime and must not replace N01 or N06.
+Stabilize N06↔N05, N05↔N04, N04↔N03, N03↔N02 and N02↔N01. Then complete N01↔N06↔N07 as the final fusion stage. N07 remains an independent AI runtime and must not replace N01 or N06.
 
-## Current work unit
-Source: N06. Targets: N05 and N01. Connection: capability/tool/agent fusion plus canonical Mesh interoperability. Recent corrections include seven-nucleus identity, N07 channels, HMAC nonce binding, executable AI-pilot handler routing, canonical capability composition, repaired Mesh bridge routing, corrected AI SDK tool invocation, and contract metadata propagation. Remaining: clear N06 CI/typecheck and then prove N01↔N06 executable capability routing before final N07 commissioning.
+## CUMULATIVE MASTER DIRECTIVE
 
-## Cross-front observations
-N05 exposes a richer capability contract with explicit owner, consumers, fallbacks, agents, tools, composability and a ComposedCapability provenance model. N04 has cooperative execution, hybrid Mesh transport negotiation, peer channels and capability composition. These structures are to be reused/adapted rather than recreated.
+No previous directive is cancelled. Apply PRESERVE → AUDIT → CORRECT → COMPLETE → CONNECT → CROSS → FUSE → OPTIMIZE → VALIDATE → DOCUMENT → ADVANCE. Every failure is an action. When blocked, research official documentation, standards and technically sound alternatives, try the next appropriate path, and stop only for a demonstrated real blocker or proven-inappropriate change.
 
-## Handoff minimum
-Every substantial work unit records source, target, connection, commit, changed files, findings, corrections, affected capabilities/agents/tools, dependencies, elapsed time, verification evidence, remaining work, compatibility and commissioning status.
+For every nucleus and pair inspect identity, agents, capabilities, functions, tools, providers, context, memory, execution, input, output, Mesh, discovery, delegation, response, security, dependencies, performance, tests and CI. No advertised capability counts as functional until its native executable path is reachable and evidence exists.
 
-Optimize connected pairs multiplicatively through complementary agents/tools, reuse, parallelism, low latency, resilience, least privilege and minimal duplication. A numerical synergy score is evidence only when grounded in actual compatible components; never inflate a score merely to satisfy a target number.
+The Soul Mesh is the canonical interoperability layer: DISCOVERY → CAPABILITY DISCOVERY → TASK ROUTING → DELEGATION → EXECUTION → RESPONSE → CORRELATION → COMPOSITION. Transport resolution may select HTTP/REST, realtime/WebSocket, events/PubSub, loopback or internal adapters when justified; never create a parallel Mesh.
+
+Analyze synergy as agents×agents, tools×tools, capabilities×capabilities, context×context, execution×execution and AI×AI. Generate new capabilities only from demonstrably useful compositions. Every emergent capability requires name, purpose, owner(s), participating nuclei/agents/tools, input, processing, output, dependencies, execution mode, contract, registry, tests and documentation.
+
+Support temporary agent federation (Planner, Researcher, Analyzer, Executor, Validator, Synthesizer), capability-based delegation, dynamic routing by fit/load/latency/availability/priority/cost/dependencies/reliability, safe parallel execution, cache reuse and resilient fallback/recovery.
+
+SOUL Super GPU / SuperCompute is a logical distributed parallel-processing fabric: TASK → DECOMPOSITION → SCHEDULER → CAPABILITY ROUTER → PARALLEL EXECUTION → RESULT AGGREGATION → VALIDATION → FINAL RESULT. Combine inter-nucleus and intra-nucleus workers when dependencies permit. N06's native agents, tools and capabilities must be exposed to this fabric without duplication.
+
+Every substantial handoff records WHAT_CHANGED, WHAT_WAS_FOUND, WHAT_REMAINS, WHAT_NEXT_AGENT_SHOULD_DO, source, target, connection, commit, branch, dependencies, elapsed time, verification evidence, compatibility and commissioning state. Coverage/health/performance graphs support delivery decisions; they never substitute for tests.
