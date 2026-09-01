@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { nucleus06Processor } from './Nucleus05Processor';
+import { nucleus06Processor } from './N06Processor';
 import { authorizeN06Capability, enforceN06Step } from './N06ExecutionPolicy';
 
 test('N06 exposes canonical capabilities and executes registered support handlers', async () => {
