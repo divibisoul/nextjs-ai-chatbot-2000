@@ -1,1 +1,27 @@
-export const SOUL_MESH_PROTOCOL='soul-mesh/1'; export type NucleusId='N01'|'N02'|'N03'|'N04'|'N05'|'N06'; export type SoulMeshMessage={protocol:string;id:string;correlationId:string;source:NucleusId;target:NucleusId;kind:string;capability:string;payload:unknown;timestamp:string}; export function validateMessage(m:SoulMeshMessage,nucleusId:NucleusId){if(m.protocol!==SOUL_MESH_PROTOCOL||m.target!==nucleusId||m.source===m.target||!m.id||!m.correlationId||!m.capability)throw new Error('Invalid Mesh message');return true;} export async function handleMeshMessage(m:SoulMeshMessage,nucleusId:NucleusId,handlers:Record<string,(p:unknown)=>Promise<unknown>|unknown>){validateMessage(m,nucleusId);if(m.kind!=='request')return m;const h=handlers[m.capability];if(!h)return {...m,kind:'error',payload:{code:'CAPABILITY_NOT_FOUND'}};try{return {...m,kind:'response',payload:await h(m.payload)}}catch{return {...m,kind:'error',payload:{code:'CAPABILITY_EXECUTION_ERROR'}}}}
+import {
+  SOUL_MESH_PROTOCOL,
+  SOUL_MESH_CONTRACT_VERSION,
+  type SoulMeshMessage as CanonicalSoulMeshMessage,
+  validateSoulMeshMessage,
+} from '@/lib/soul-mesh/SoulMeshProtocol';
+import { handleMeshMessage as canonicalHandleMeshMessage } from '@/lib/soul-mesh/endpoint';
+
+export { SOUL_MESH_PROTOCOL, SOUL_MESH_CONTRACT_VERSION };
+export type NucleusId = 'N01'|'N02'|'N03'|'N04'|'N05'|'N06';
+export type SoulMeshMessage<T = unknown> = CanonicalSoulMeshMessage<T>;
+
+export function validateMessage(message: SoulMeshMessage, nucleusId: NucleusId): true {
+  if (message.target !== nucleusId) throw new Error('Invalid Mesh message');
+  validateSoulMeshMessage(message);
+  return true;
+}
+
+/** Compatibility facade. The canonical N06 handler remains the only executing implementation. */
+export async function handleMeshMessage(
+  message: SoulMeshMessage,
+  nucleusId: NucleusId,
+  handlers: Record<string, (payload: unknown) => Promise<unknown> | unknown> = {},
+): Promise<SoulMeshMessage> {
+  validateMessage(message, nucleusId);
+  return canonicalHandleMeshMessage(message, handlers);
+}
