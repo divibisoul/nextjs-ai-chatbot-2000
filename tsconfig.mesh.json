@@ -10,5 +10,5 @@
     "baseUrl": ".",
     "paths": { "@/*": ["./*"] }
   },
-  "include": ["src/soul-mesh/endpoint.ts", "lib/soul-mesh/**/*.ts", "lib/types.ts"]
+  "include": ["src/soul-mesh/endpoint.ts", "lib/soul-mesh/**/*.ts", "lib/soul-core/N06Processor.ts", "lib/soul-core/Nucleus05ToolRegistry.ts", "lib/soul-core/Nucleus06Capabilities.ts", "lib/soul-core/Nucleus05Capabilities.ts"]
 }
