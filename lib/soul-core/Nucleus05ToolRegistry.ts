@@ -5,6 +5,7 @@ import { createDocument } from '@/lib/ai/tools/create-document';
 import { updateDocument } from '@/lib/ai/tools/update-document';
 import { getWeather } from '@/lib/ai/tools/get-weather';
 import { requestSuggestions } from '@/lib/ai/tools/request-suggestions';
+import { NUCLEUS_06_TOOL_IDS, type Nucleus06ToolId } from './N06ToolIds';
 
 export interface Nucleus06ToolContext { session: Session; dataStream: UIMessageStreamWriter<ChatMessage>; }
 
@@ -13,8 +14,8 @@ export function createNucleus06Tools(context: Nucleus06ToolContext) {
   return { createDocument: createDocument(context), updateDocument: updateDocument(context), getWeather, requestSuggestions: requestSuggestions(context) };
 }
 
-export const NUCLEUS_06_TOOL_IDS = ['createDocument', 'updateDocument', 'getWeather', 'requestSuggestions'] as const;
-export type Nucleus06ToolId = (typeof NUCLEUS_06_TOOL_IDS)[number];
+export { NUCLEUS_06_TOOL_IDS } from './N06ToolIds';
+export type { Nucleus06ToolId } from './N06ToolIds';
 
 /** Backward-compatible aliases for older Mesh/runtime imports. */
 export const createNucleus05Tools = createNucleus06Tools;
