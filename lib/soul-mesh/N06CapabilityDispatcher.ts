@@ -40,7 +40,7 @@ export async function executeN06Capability(capability: string, payload: unknown,
 
   if (capability.startsWith('tool:')) {
     const toolId = capability.slice(5);
-    if (!(NUC​LEUS_06_TOOL_IDS as readonly string[]).includes(toolId)) throw new Error(`UNKNOWN_TOOL:${toolId}`);
+    if (!(NUCLEUS_06_TOOL_IDS as readonly string[]).includes(toolId)) throw new Error(`UNKNOWN_TOOL:${toolId}`);
     const tools = createNucleus06Tools(effectiveContext as Nucleus06ToolContext);
     const tool = tools[toolId as keyof typeof tools] as { execute?: (args: unknown) => unknown };
     if (typeof tool?.execute !== 'function') throw new Error(`TOOL_NOT_EXECUTABLE:${toolId}`);
