@@ -4,24 +4,24 @@ import { createSoulMeshMessage, validateSoulMeshMessage } from './SoulMeshProtoc
 import { createSoulMeshNonce, signSoulMeshMessage } from './SoulMeshHmac';
 
 export type N06Peer=Exclude<SoulNucleus,'N06'>;
-const PEERS:readonly N06Peer[]=['N01','N02','N03','N04','N05'];
-const ENV:Record<N06Peer,string>={N01:'SOUL_MESH_N01_URL',N02:'SOUL_MESH_N02_URL',N03:'SOUL_MESH_N03_URL',N04:'SOUL_MESH_N04_URL',N05:'SOUL_MESH_N05_URL'};
+const PEERS:readonly N06Peer[]=['N01','N02','N03','N04','N05','N07'];
+const ENV:Record<N06Peer,string>={N01:'SOUL_MESH_N01_URL',N02:'SOUL_MESH_N02_URL',N03:'SOUL_MESH_N03_URL',N04:'SOUL_MESH_N04_URL',N05:'SOUL_MESH_N05_URL',N07:'SOUL_MESH_N07_URL'};
 const DEFAULT_TIMEOUT_MS=15000;
 const MAX_TIMEOUT_MS=60000;
 const MAX_RETRIES=2;
 function timeout(ms:number){return Math.min(MAX_TIMEOUT_MS,Math.max(1000,Math.floor(ms)));}
 function meshSecret(){return process.env.SOUL_MESH_HMAC_SECRET?.trim()??'';}
 export function getN06Peers(){return PEERS.map(id=>({id,url:process.env[ENV[id]]?.trim().replace(/\/$/,'')??''}));}
-export function createN06Request(target:N06Peer,capability:string,payload:unknown):SoulMeshMessage{return createSoulMeshMessage({source:'N06',target,kind:'request',capability,correlationId:crypto.randomUUID(),payload,transport:'HTTP'});}
+export function createN06Request(target:N06Peer,capability:string,payload:unknown):SoulMeshMessage{return createSoulMeshMessage({source:'N06',target,kind:'request',capability,correlationId:crypto.randomUUID(),payload,transport:'HTTP',meta:{runtime:'nextjs-ai-chatbot-2000',transport:'HTTP',encoding:'json',version:'1.1.0'}});}
 export async function sendFromN06(target:N06Peer,capability:string,payload:unknown,timeoutMs=DEFAULT_TIMEOUT_MS):Promise<unknown>{
- const peer=getN06Peers().find(p=>p.id===target);if(!peer?.url)throw new Error(`N06_PEER_NOT_CONFIGURED:${target}`);
+ const peer=getN06Peers().find(p=>p.id===target);if(!peer?.url)throw new Error(`N06_PEER_NOT_CONFIGURED:${target}`);if(!capability.trim())throw new Error('N06_CAPABILITY_REQUIRED');
  const message=createN06Request(target,capability,payload);let last:unknown;
  for(let attempt=0;attempt<=MAX_RETRIES;attempt++){
   const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),timeout(timeoutMs));
   try{
-   const nonce=createSoulMeshNonce();
-   const hmac=meshSecret()?signSoulMeshMessage(message,meshSecret(),nonce):'';
-   const response=await fetch(`${peer.url}/api/soul-mesh`,{method:'POST',headers:{'content-type':'application/json',accept:'application/json','x-soul-correlation-id':message.correlationId,...(hmac?{'x-soul-mesh-nonce':nonce,'x-soul-mesh-hmac':hmac}:{})},body:JSON.stringify(message),cache:'no-store',signal:controller.signal});
+   const secret=meshSecret();const headers:Record<string,string>={'content-type':'application/json',accept:'application/json','x-soul-correlation-id':message.correlationId};
+   if(secret){const nonce=createSoulMeshNonce();message.meta={...(message.meta??{}),nonce,traceId:message.correlationId};headers['x-soul-mesh-nonce']=nonce;headers['x-soul-mesh-hmac']=signSoulMeshMessage(message,secret,nonce);}
+   const response=await fetch(`${peer.url}/api/soul-mesh`,{method:'POST',headers,body:JSON.stringify(message),cache:'no-store',signal:controller.signal});
    const raw:unknown=await response.json().catch(()=>null);
    if(!response.ok)throw new Error(`N06_MESH_HTTP_${response.status}`);
    validateSoulMeshMessage(raw);const body=raw as SoulMeshMessage;
