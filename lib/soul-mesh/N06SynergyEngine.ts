@@ -1,4 +1,4 @@
-import { composeCapabilities, soulCapability, type SoulCapability } from '../src/soul-mesh/capabilities';
+import { composeCapabilities, soulCapability, type SoulCapability } from '../../src/soul-mesh/capabilities';
 
 export interface NucleusCapabilitySnapshot {
   nucleus: string;
