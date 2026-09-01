@@ -6,6 +6,7 @@ import { authorizeN06Capability, enforceN06Step } from './N06ExecutionPolicy';
 test('N06 exposes canonical capabilities and executes registered support handlers', async () => {
   nucleus06Processor.registerHandler('support.context', async (input) => ({ input }));
   assert.equal(nucleus06Processor.supports('support.context'), true);
+  assert.equal(nucleus06Processor.supports('support.documents'), false);
   assert.equal(nucleus06Processor.supports('ai-pilot'), false);
   assert.deepEqual(await nucleus06Processor.execute({ capability: 'support.context', input: 'x' }), { input: 'x' });
 });
