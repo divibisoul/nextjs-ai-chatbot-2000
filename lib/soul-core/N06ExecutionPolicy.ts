@@ -1,5 +1,5 @@
 import { NUCLEUS_06_CAPABILITIES, supportsNucleus06Capability } from './Nucleus06Capabilities';
-import { NUCLEUS_06_TOOL_IDS } from './Nucleus05ToolRegistry';
+import { NUCLEUS_06_TOOL_IDS } from './N06ToolIds';
 
 export interface N06ExecutionPolicy { maxSteps: number; allowedCapabilities: readonly string[]; }
 
