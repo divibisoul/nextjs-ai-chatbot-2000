@@ -24,7 +24,7 @@ async function executeNativeTool(input: unknown, context?: N06EngineContext) {
   if (tool === 'getWeather') return executeTool(getWeather as ExecutableTool, args);
   const tools = createN06Tools(requireToolContext(context));
   if (tool !== 'createDocument' && tool !== 'updateDocument' && tool !== 'requestSuggestions') throw new Error(`UNKNOWN_TOOL:${tool}`);
-  return executeTool(tools[tool], args);
+  return executeTool(tools[tool] as ExecutableTool, args);
 }
 async function executePilot(input: unknown, context?: N06EngineContext) {
   const value = objectInput(input); const prompt = typeof value.prompt === 'string' ? value.prompt.trim() : ''; if (!prompt) throw new Error('N06_AI_PILOT_PROMPT_REQUIRED');
@@ -33,16 +33,15 @@ async function executePilot(input: unknown, context?: N06EngineContext) {
   return { nucleus: 'N06', model: modelId, text: result.text, usage: result.usage, metadata: context?.metadata ?? {} };
 }
 export function activateN06NativeCapabilities() {
-  if (n06CapabilityEngine.listHandlers().length > 0) return n06CapabilityEngine;
+  if (n06CapabilityEngine.listExecutables().length > 0) return n06CapabilityEngine;
   n06CapabilityEngine
-    .registerHandler('support.ai-pilot', executePilot)
+    .registerPilot({ id: 'n06-native-ai-pilot', execute: executePilot })
     .registerHandler('support.tool-execution', executeNativeTool)
     .registerHandler('support.artifacts', async (input, context) => { const value = objectInput(input); const toolContext = requireToolContext(context); if (value.action === 'update') return executeTool(updateDocument(toolContext) as ExecutableTool, { id: String(value.id ?? ''), description: String(value.description ?? '') }); return executeTool(createDocument(toolContext) as ExecutableTool, { title: String(value.title ?? 'Untitled'), kind: value.kind }); })
     .registerHandler('support.documents', async (input, context) => { const value = objectInput(input); const toolContext = requireToolContext(context); if (value.action === 'update') return executeTool(updateDocument(toolContext) as ExecutableTool, { id: String(value.id ?? ''), description: String(value.description ?? '') }); return executeTool(createDocument(toolContext) as ExecutableTool, { title: String(value.title ?? 'Untitled'), kind: value.kind }); })
     .registerHandler('support.context', async (input, context) => ({ input, metadata: context?.metadata ?? {}, nucleus: 'N06' }))
     .registerHandler('support.streaming', async (input, context) => { if (context?.dataStream && typeof (context.dataStream as { write?: unknown }).write === 'function') (context.dataStream as { write: (value: unknown) => void }).write({ type: 'data-kind', data: 'n06-stream', transient: true }); return input; })
     .registerHandler('support.mesh', async (input) => ({ accepted: true, protocol: 'soul-mesh/1', nucleus: 'N06', payload: input }));
-  n06CapabilityEngine.registerPilot({ id: 'n06-native-ai-pilot', execute: executePilot });
   return n06CapabilityEngine;
 }
 activateN06NativeCapabilities();
