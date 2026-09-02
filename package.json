@@ -19,6 +19,7 @@
     "test": "export PLAYWRIGHT=True && pnpm exec playwright test",
     "test:nucleus05": "tsx --test lib/soul-core/Nucleus05Processor.test.ts",
     "test:nucleus06": "tsx --test lib/soul-core/Nucleus06Processor.test.ts",
+    "test:nucleus06:authority": "tsx --test lib/soul-core/N06CapabilityConsistency.test.ts",
     "test:mesh-tools": "tsx --test lib/soul-mesh/N06MeshToolContext.test.ts lib/soul-neural/N07Bridge.test.ts"
   },
   "dependencies": {
