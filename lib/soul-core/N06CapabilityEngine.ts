@@ -13,6 +13,12 @@ export interface N06EnginePilot {
   execute(input: unknown, context?: N06EngineContext): Promise<unknown>;
 }
 
+type N06Executable = {
+  kind: 'handler' | 'agent';
+  id: string;
+  execute: N06EngineHandler;
+};
+
 const LEGACY_TO_CANONICAL: Record<string, Nucleus06Capability> = {
   'ai-pilot': 'support.ai-pilot',
   'tool-execution': 'support.tool-execution',
@@ -31,41 +37,50 @@ function normalizeCapability(capability: string): Nucleus06Capability | undefine
 export class N06CapabilityEngine {
   readonly id = 'nucleus-06-capability-engine' as const;
   readonly capabilities = NUCLEUS_06_CAPABILITIES;
-  private readonly handlers = new Map<Nucleus06Capability, N06EngineHandler>();
-  private pilot?: N06EnginePilot;
+  private readonly executables = new Map<Nucleus06Capability, N06Executable>();
 
   registerHandler(capability: Nucleus06Capability, handler: N06EngineHandler): this {
     if (!capability.trim()) throw new Error('N06_CAPABILITY_REQUIRED');
-    if (this.handlers.has(capability)) throw new Error(`N06_CAPABILITY_HANDLER_ALREADY_REGISTERED:${capability}`);
-    this.handlers.set(capability, handler);
+    if (this.executables.has(capability)) throw new Error(`N06_CAPABILITY_ALREADY_REGISTERED:${capability}`);
+    this.executables.set(capability, { kind: 'handler', id: capability, execute: handler });
     return this;
   }
 
   registerPilot(pilot: N06EnginePilot): this {
     if (!pilot.id.trim()) throw new Error('N06_PILOT_ID_REQUIRED');
-    this.pilot = pilot;
+    const capability: Nucleus06Capability = 'support.ai-pilot';
+    if (this.executables.has(capability)) throw new Error('N06_AI_PILOT_ALREADY_REGISTERED');
+    this.executables.set(capability, { kind: 'agent', id: pilot.id, execute: pilot.execute });
     return this;
   }
 
-  getPilot(): N06EnginePilot | undefined { return this.pilot; }
-  listHandlers(): Nucleus06Capability[] { return [...this.handlers.keys()]; }
-
-  executableCapabilities(): Nucleus06Capability[] {
-    return [...this.capabilities].filter((capability) => capability === 'support.ai-pilot' ? Boolean(this.pilot) || this.handlers.has(capability) : this.handlers.has(capability));
+  getPilot(): N06EnginePilot | undefined {
+    const executable = this.executables.get('support.ai-pilot');
+    if (!executable || executable.kind !== 'agent') return undefined;
+    return { id: executable.id, execute: executable.execute };
   }
+
+  listHandlers(): Nucleus06Capability[] {
+    return [...this.executables.entries()].filter(([, executable]) => executable.kind === 'handler').map(([capability]) => capability);
+  }
+
+  listExecutables(): Array<{ capability: Nucleus06Capability; kind: N06Executable['kind']; id: string }> {
+    return [...this.executables.entries()].map(([capability, executable]) => ({ capability, kind: executable.kind, id: executable.id }));
+  }
+
+  executableCapabilities(): Nucleus06Capability[] { return [...this.executables.keys()]; }
 
   supports(capability: string): boolean {
     const canonical = normalizeCapability(capability);
-    return canonical !== undefined && this.executableCapabilities().includes(canonical);
+    return canonical !== undefined && this.executables.has(canonical);
   }
 
   async execute(capability: string, input: unknown, context?: N06EngineContext): Promise<unknown> {
     const canonical = normalizeCapability(capability);
     if (!canonical) throw new Error(`N06_UNSUPPORTED_CAPABILITY:${capability}`);
-    if (canonical === 'support.ai-pilot' && this.pilot) return this.pilot.execute(input, context);
-    const handler = this.handlers.get(canonical);
-    if (!handler) throw new Error(`N06_CAPABILITY_HANDLER_NOT_REGISTERED:${canonical}`);
-    return handler(input, context);
+    const executable = this.executables.get(canonical);
+    if (!executable) throw new Error(`N06_CAPABILITY_HANDLER_NOT_REGISTERED:${canonical}`);
+    return executable.execute(input, context);
   }
 }
 
