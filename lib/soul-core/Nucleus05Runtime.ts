@@ -1,17 +1,19 @@
 import type { Nucleus05Context } from './Nucleus05Processor';
 import { nucleus05Processor } from './Nucleus05Processor';
-import { NUCLEUS_05_TOOL_IDS, createNucleus05Tools, type Nucleus05ToolContext } from './Nucleus05ToolRegistry';
+import { NUCLEUS_06_TOOL_IDS, createN06Tools, type N06ToolContext } from './N06ToolRegistry';
 
-/** Connects Mesh execution to the existing N06 tool implementations. */
-export function attachNucleus05Tools(context: Nucleus05ToolContext) {
-  const tools = createNucleus05Tools(context);
-  if (!nucleus05Processor.listHandlers().includes('tool-execution')) {
-    nucleus05Processor.registerHandler('tool-execution', async (input: unknown) => {
+/** @deprecated Compatibility facade for the historical Nucleus05 runtime. */
+export function attachNucleus05Tools(context: N06ToolContext) {
+  const tools = createN06Tools(context);
+  if (!nucleus05Processor.listHandlers().includes('support.tool-execution')) {
+    nucleus05Processor.registerHandler('support.tool-execution', async (input: unknown) => {
+      if (!input || typeof input !== 'object' || Array.isArray(input)) throw new Error('N06_TOOL_REQUEST_MUST_BE_OBJECT');
       const request = input as { toolId?: string; args?: unknown };
-      if (!request.toolId || !NUCLEUS_05_TOOL_IDS.includes(request.toolId as any)) throw new Error(`Unknown Nucleus 06 tool: ${request.toolId ?? 'undefined'}`);
-      const toolDefinition = tools[request.toolId as keyof typeof tools] as any;
-      if (typeof toolDefinition?.execute !== 'function') throw new Error(`Tool is not executable: ${request.toolId}`);
-      return toolDefinition.execute(request.args ?? {});
+      const toolId = request.toolId ?? '';
+      if (!(NUCLEUS_06_TOOL_IDS as readonly string[]).includes(toolId)) throw new Error(`Unknown Nucleus 06 tool: ${toolId || 'undefined'}`);
+      const toolDefinition = tools[toolId as keyof typeof tools];
+      if (!toolDefinition || typeof toolDefinition !== 'object' || !('execute' in toolDefinition) || typeof toolDefinition.execute !== 'function') throw new Error(`Tool is not executable: ${toolId}`);
+      return toolDefinition.execute(request.args ?? {}, {});
     });
   }
   return nucleus05Processor;
