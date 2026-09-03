@@ -8,8 +8,8 @@ const LEGACY_TO_CANONICAL: Record<Nucleus05Capability, Nucleus06Capability> = { 
 function normalizeCapability(capability:string):Nucleus06Capability|undefined{if((NUCLEUS_06_CAPABILITIES as readonly string[]).includes(capability))return capability as Nucleus06Capability;return LEGACY_TO_CANONICAL[capability as Nucleus05Capability];}
 export class N06Processor{
  readonly id='nucleus-06' as const; readonly capabilities=NUCLEUS_06_CAPABILITIES; private readonly handlers=new Map<Nucleus06Capability,N06Handler>(); private pilot?:N06Pilot;
- registerHandler(capability:Nucleus06Capability,handler:N06Handler){this.handlers.set(capability,handler);return this;}
- registerPilot(pilot:N06Pilot){this.pilot=pilot;return this;}
+ registerHandler(capability:Nucleus06Capability,handler:N06Handler){if(!capability.trim())throw new Error('CAPABILITY_ID_REQUIRED');if(!this.capabilities.includes(capability as never))throw new Error(`CAPABILITY_NOT_DECLARED: ${capability}`);if(this.handlers.has(capability))throw new Error(`CAPABILITY_HANDLER_ALREADY_REGISTERED: ${capability}`);this.handlers.set(capability,handler);return this;}
+ registerPilot(pilot:N06Pilot){if(this.pilot)throw new Error('N06_PILOT_ALREADY_REGISTERED');if(!pilot?.id?.trim())throw new Error('N06_PILOT_ID_REQUIRED');this.pilot=pilot;return this;}
  getPilot(){return this.pilot;}
  listHandlers(){return [...this.handlers.keys()];}
  executableCapabilities(){return [...this.capabilities].filter(c=>c==='support.ai-pilot'?(Boolean(this.pilot)||this.handlers.has(c)):this.handlers.has(c));}
