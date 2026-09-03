@@ -18,7 +18,7 @@
     "db:up": "drizzle-kit up",
     "test": "export PLAYWRIGHT=True && pnpm exec playwright test",
     "test:nucleus05": "tsx --test lib/soul-core/Nucleus05Processor.test.ts",
-    "test:nucleus06": "tsx --test lib/soul-core/Nucleus06Processor.test.ts",
+    "test:nucleus06": "tsx --test lib/soul-core/Nucleus06Processor.test.ts && node scripts/n06-authority-check.mjs",
     "test:mesh-tools": "tsx --test lib/soul-mesh/N06MeshToolContext.test.ts lib/soul-neural/N07Bridge.test.ts"
   },
   "dependencies": {
@@ -28,7 +28,7 @@
     "@codemirror/lang-javascript": "^6.2.2",
     "@codemirror/lang-python": "^6.1.6",
     "@codemirror/state": "^6.5.0",
-    "@codemirror/theme-one-dark": "^6.1.2",
+    "@codemirror/theme-one-dark": "^6.5.0",
     "@codemirror/view": "^6.35.0",
     "codemirror": "6.0.2",
     "@opentelemetry/api": "^1.9.0",
@@ -54,7 +54,6 @@
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
     "diff-match-patch": "^1.0.0",
-    "dotenv": "^16.4.5",
     "drizzle-orm": "^0.34.0",
     "fast-deep-equal": "^3.1.1",
     "framer-motion": "^11.3.19",
@@ -103,6 +102,7 @@
     "eslint": "^8.57.0",
     "eslint-config-next": "14.2.5",
     "eslint-config-prettier": "^9.1.0",
+    "eslint-import-resolver-typescript": "^3.6.3",
     "eslint-plugin-tailwindcss": "^3.17.5",
     "postcss": "^8",
     "tailwindcss": "^3.4.1",
