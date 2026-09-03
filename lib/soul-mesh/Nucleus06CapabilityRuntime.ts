@@ -1,39 +1,38 @@
-import { n06Processor } from '@/lib/soul-core/N06Processor';
+import { n06Processor, type N06Context } from '@/lib/soul-core/N06Processor';
+import type { Nucleus06Capability } from '@/lib/soul-core/Nucleus06Capabilities';
 
-export type Nucleus06Handler = (input: unknown, context?: Record<string, unknown>) => Promise<unknown>;
-
-/** Canonical N06 capability runtime. Mesh dispatch and local execution share the N06 processor boundary. */
+/**
+ * Compatibility facade for the canonical N06 processor.
+ *
+ * N06Processor is the sole execution authority. This facade deliberately
+ * contains no handler registry and cannot execute a local handler itself.
+ * Keeping the facade preserves existing imports while enforcing the
+ * single-authority invariant required by the SOUL Law Zero.
+ */
 export class Nucleus06CapabilityRuntime {
-  private readonly handlers = new Map<string, Nucleus06Handler>();
-
-  register(capability: string, handler: Nucleus06Handler) {
-    if (!capability.trim()) throw new Error('CAPABILITY_ID_REQUIRED');
-    if (this.handlers.has(capability)) throw new Error(`CAPABILITY_HANDLER_ALREADY_REGISTERED: ${capability}`);
-    this.handlers.set(capability, handler);
-    return this;
+  register(): never {
+    throw new Error('N06_SINGLE_AUTHORITY: register handlers on n06Processor');
   }
 
-  has(capability: string) {
-    return n06Processor.executableCapabilities().includes(capability as never);
+  has(capability: string): boolean {
+    return n06Processor.supports(capability);
   }
 
-  declared() {
-    return [...n06Processor.capabilities];
+  declared(): readonly Nucleus06Capability[] {
+    return n06Processor.capabilities;
   }
 
-  executable() {
+  executable(): readonly Nucleus06Capability[] {
     return n06Processor.executableCapabilities();
   }
 
-  async execute(capability: string, input: unknown, context?: Record<string, unknown>) {
-    if (!this.declared().includes(capability as never)) {
-      const error = new Error(`CAPABILITY_NOT_DECLARED: ${capability}`);
-      (error as Error & { code?: string }).code = 'CAPABILITY_NOT_DECLARED';
+  async execute(capability: string, input: unknown, context?: N06Context): Promise<unknown> {
+    if (!n06Processor.supports(capability)) {
+      const error = new Error(`CAPABILITY_NOT_EXECUTABLE: ${capability}`);
+      (error as Error & { code?: string }).code = 'CAPABILITY_NOT_EXECUTABLE';
       throw error;
     }
-    const handler = this.handlers.get(capability);
-    if (handler) return handler(input, context);
-    return n06Processor.execute({ capability: capability as never, input }, context);
+    return n06Processor.execute({ capability: capability as Nucleus06Capability, input }, context);
   }
 }
 
