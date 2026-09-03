@@ -2,14 +2,18 @@ import { n06Processor } from '@/lib/soul-core/N06Processor';
 
 export type Nucleus06Handler = (input: unknown, context?: Record<string, unknown>) => Promise<unknown>;
 
-/** Canonical N06 capability runtime. Mesh dispatch and local execution share the N06 processor boundary. */
+/**
+ * Canonical N06 execution facade.
+ *
+ * Lei Zero invariant: this module MUST NOT own a second handler registry.
+ * N06Processor is the only runtime authority for capability registration and execution.
+ * This facade exists only to preserve the historical import surface while delegating
+ * every operation to the canonical processor.
+ */
 export class Nucleus06CapabilityRuntime {
-  private readonly handlers = new Map<string, Nucleus06Handler>();
-
   register(capability: string, handler: Nucleus06Handler) {
     if (!capability.trim()) throw new Error('CAPABILITY_ID_REQUIRED');
-    if (this.handlers.has(capability)) throw new Error(`CAPABILITY_HANDLER_ALREADY_REGISTERED: ${capability}`);
-    this.handlers.set(capability, handler);
+    n06Processor.registerHandler(capability as never, handler as never);
     return this;
   }
 
@@ -31,10 +35,9 @@ export class Nucleus06CapabilityRuntime {
       (error as Error & { code?: string }).code = 'CAPABILITY_NOT_DECLARED';
       throw error;
     }
-    const handler = this.handlers.get(capability);
-    if (handler) return handler(input, context);
     return n06Processor.execute({ capability: capability as never, input }, context);
   }
 }
 
+/** Compatibility facade only; the processor remains the sole execution authority. */
 export const nucleus06CapabilityRuntime = new Nucleus06CapabilityRuntime();
