@@ -1,19 +1,32 @@
+import type { Session } from 'next-auth';
+import type { UIMessageStreamWriter } from 'ai';
+import type { ChatMessage } from '@/lib/types';
 import { createDocument } from '@/lib/ai/tools/create-document';
 import { updateDocument } from '@/lib/ai/tools/update-document';
 import { getWeather } from '@/lib/ai/tools/get-weather';
 import { requestSuggestions } from '@/lib/ai/tools/request-suggestions';
-import type { N06Context } from './N06Processor';
+import { NUCLEUS_06_TOOL_IDS, type Nucleus06ToolId } from './N06ToolIds';
 
-export interface N06ToolContext { session: unknown; dataStream: unknown; }
+export interface N06ToolContext {
+  session: Session;
+  dataStream: UIMessageStreamWriter<ChatMessage>;
+}
 
+/** Canonical registry for tools owned by N06. */
 export function createN06Tools(context: N06ToolContext) {
   return {
-    createDocument: createDocument(context as any),
-    updateDocument: updateDocument(context as any),
+    createDocument: createDocument(context),
+    updateDocument: updateDocument(context),
     getWeather,
-    requestSuggestions: requestSuggestions(context as any),
+    requestSuggestions: requestSuggestions(context),
   };
 }
 
-export const N06_TOOL_IDS = ['createDocument', 'updateDocument', 'getWeather', 'requestSuggestions'] as const;
-export type N06ToolId = (typeof N06_TOOL_IDS)[number];
+export { NUCLEUS_06_TOOL_IDS } from './N06ToolIds';
+export type { Nucleus06ToolId } from './N06ToolIds';
+export type N06ToolSet = ReturnType<typeof createN06Tools>;
+
+export const N06ToolRegistry = {
+  create: createN06Tools,
+  ids: NUCLEUS_06_TOOL_IDS,
+} as const;
