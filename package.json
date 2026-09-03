@@ -18,7 +18,7 @@
     "db:up": "drizzle-kit up",
     "test": "export PLAYWRIGHT=True && pnpm exec playwright test",
     "test:nucleus05": "tsx --test lib/soul-core/Nucleus05Processor.test.ts",
-    "test:nucleus06": "tsx --test lib/soul-core/Nucleus06Processor.test.ts",
+    "test:nucleus06": "tsx --test lib/soul-core/Nucleus06Processor.test.ts && node scripts/n06-authority-check.mjs",
     "test:nucleus06:authority": "tsx --test lib/soul-core/N06CapabilityConsistency.test.ts",
     "test:mesh-tools": "tsx --test lib/soul-mesh/N06MeshToolContext.test.ts lib/soul-neural/N07Bridge.test.ts"
   },
@@ -91,7 +91,7 @@
     "zod": "^3.25.68"
   },
   "devDependencies": {
-    "@biomejs/biome": "1.9.4",
+    "@biomejs/biome": "^1.9.4",
     "@tailwindcss/typography": "^0.5.15",
     "@types/d3-scale": "^4.0.8",
     "@types/node": "^22.8.6",
