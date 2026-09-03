@@ -28,7 +28,7 @@
     "@codemirror/lang-javascript": "^6.2.2",
     "@codemirror/lang-python": "^6.1.6",
     "@codemirror/state": "^6.5.0",
-    "@codemirror/theme-one-dark": "^6.5.0",
+    "@codemirror/theme-one-dark": "^6.1.2",
     "@codemirror/view": "^6.35.0",
     "codemirror": "6.0.2",
     "@opentelemetry/api": "^1.9.0",
@@ -90,7 +90,7 @@
     "zod": "^3.25.68"
   },
   "devDependencies": {
-    "@biomejs/biome": "1.9.4",
+    "@biomejs/biome": "^1.9.4",
     "@tailwindcss/typography": "^0.5.15",
     "@types/d3-scale": "^4.0.8",
     "@types/node": "^22.8.6",
