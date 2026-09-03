@@ -3,19 +3,21 @@ name: Soul Mesh CI
 on:
   push:
     branches: [ main ]
+  pull_request:
+    branches: [ main ]
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
-  group: n06-soul-mesh-main
+  group: n06-soul-mesh-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
   verify:
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
+    runs-on: ubuntu-22.04
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
         with:
@@ -27,26 +29,13 @@ jobs:
         with:
           node-version: 22
           cache: pnpm
-      - name: Synchronize lockfile
-        shell: bash
-        run: |
-          pnpm install --lockfile-only --ignore-scripts
-          if git diff --quiet -- pnpm-lock.yaml; then
-            echo "pnpm-lock.yaml already synchronized"
-          else
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add pnpm-lock.yaml
-            git commit -m "chore(n06): synchronize pnpm lockfile [skip ci]"
-            git fetch origin main
-            git rebase origin/main
-            git push origin HEAD:main
-          fi
-      - name: Verify lockfile is synchronized
+      - name: Verify immutable lockfile
         run: pnpm install --frozen-lockfile --ignore-scripts
       - name: Typecheck Mesh adapter
         run: pnpm exec tsc -p tsconfig.mesh.json --noEmit
       - name: Run nucleus processor tests
         run: pnpm run test:nucleus05
-      - name: Run N06 cognitive runtime tests
+      - name: Run N06 cognitive runtime and authority tests
         run: pnpm run test:nucleus06
+      - name: Emit N06 authority evidence
+        run: test -s N06-AUTHORITY-INTEGRITY.json
