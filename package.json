@@ -88,7 +88,8 @@
     "tailwindcss-animate": "^1.0.7",
     "usehooks-ts": "^3.1.0",
     "zod": "^3.25.68",
-    "bcrypt-ts": "^5.0.2"
+    "bcrypt-ts": "^5.0.2",
+    "dotenv": "^16.4.5"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
