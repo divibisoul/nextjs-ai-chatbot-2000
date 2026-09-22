@@ -14,7 +14,7 @@ export function attachNucleus05Tools(context: Nucleus05ToolContext) {
       if (!request.toolId || !NUCLEUS_05_TOOL_IDS.includes(request.toolId as Nucleus05ToolId)) throw new Error(`Unknown Nucleus 06 tool: ${request.toolId ?? 'undefined'}`);
       const toolDefinition = tools[request.toolId as keyof typeof tools];
       if (typeof toolDefinition?.execute !== 'function') throw new Error(`Tool is not executable: ${request.toolId}`);
-      return toolDefinition.execute(request.args ?? {});
+      return toolDefinition.execute(request.args ?? {}, { toolCallId: request.requestId ?? crypto.randomUUID(), messages: [] });
     });
   }
   return nucleus05Processor;
