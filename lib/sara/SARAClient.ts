@@ -118,3 +118,10 @@ export async function saraRegenerate(input: string, correlationId?: string): Pro
   if (!input.trim()) throw new Error('SARA_INPUT_REQUIRED');
   return saraAuxRequest('/v1/regenerate', { method: 'POST', body: { input }, correlationId });
 }
+
+
+export async function saraTrace(cycleId: string): Promise<Record<string, unknown>> {
+  const id = cycleId.trim();
+  if (!id) throw new Error('SARA_CYCLE_ID_REQUIRED');
+  return saraAuxRequest('/v1/trace/' + encodeURIComponent(id), { correlationId: id });
+}
