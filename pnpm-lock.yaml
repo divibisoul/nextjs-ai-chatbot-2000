@@ -5625,6 +5625,7 @@ snapshots:
 
   balanced-match@1.0.2: {}
 
+  bcrypt-ts@5.0.3: {}
   binary-extensions@2.3.0: {}
 
   brace-expansion@1.1.11:
