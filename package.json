@@ -20,7 +20,8 @@
     "test:nucleus05": "tsx --test lib/soul-core/Nucleus05Processor.test.ts",
     "test:nucleus06": "tsx --test lib/soul-core/Nucleus06Processor.test.ts && node scripts/n06-authority-check.mjs",
     "test:mesh-tools": "tsx --test lib/soul-mesh/N06MeshToolContext.test.ts lib/soul-neural/N07Bridge.test.ts",
-    "test:sara": "tsx --test lib/sara/SARAClient.test.ts"
+    "test:sara": "tsx --test lib/sara/SARAClient.test.ts",
+    "build:web": "next build"
   },
   "dependencies": {
     "@ai-sdk/provider": "2.0.0-beta.1",
