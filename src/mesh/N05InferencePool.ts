@@ -37,7 +37,8 @@ export class N05InferencePool {
 
   private drain() {
     while (this.active < this.concurrency && this.queue.length > 0) {
-      const job = this.queue.shift()!;
+      const job = this.queue.shift();
+      if (!job) continue;
       this.active += 1;
       Promise.resolve(executeSoulInference(job.input))
         .then(job.resolve, job.reject)
