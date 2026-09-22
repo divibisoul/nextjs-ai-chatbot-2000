@@ -1,7 +1,7 @@
 import type { Nucleus05Context } from './Nucleus05Processor';
 import { nucleus05Processor } from './Nucleus05Processor';
 import { n06Processor } from './N06Processor';
-import { NUCLEUS_05_TOOL_IDS, createNucleus05Tools, type Nucleus05ToolContext } from './Nucleus05ToolRegistry';
+import { NUCLEUS_05_TOOL_IDS, createNucleus05Tools, type Nucleus05ToolContext, type Nucleus05ToolId } from './Nucleus05ToolRegistry';
 import { NUCLEUS_06_CAPABILITIES } from './Nucleus06Capabilities';
 import { getN06Capabilities } from '@/lib/soul-mesh/N06CapabilityDispatcher';
 
