@@ -24,6 +24,10 @@ export const requestSuggestions = ({
         .describe('The ID of the document to request edits'),
     }),
     execute: async ({ documentId }) => {
+      const userId = session.user?.id;
+      if (!userId) {
+        throw new Error('AUTHENTICATED_SESSION_REQUIRED');
+      }
       const document = await getDocumentById({ id: documentId });
 
       if (!document || !document.content) {
@@ -50,11 +54,22 @@ export const requestSuggestions = ({
       });
 
       for await (const element of elementStream) {
-        // @ts-ignore todo: fix type
+        const originalSentence = element.originalSentence;
+        const suggestedSentence = element.suggestedSentence;
+        const description = element.description;
+
+        if (
+          typeof originalSentence !== 'string' ||
+          typeof suggestedSentence !== 'string' ||
+          typeof description !== 'string'
+        ) {
+          continue;
+        }
+
         const suggestion: Suggestion = {
-          originalText: element.originalSentence,
-          suggestedText: element.suggestedSentence,
-          description: element.description,
+          originalText: originalSentence,
+          suggestedText: suggestedSentence,
+          description,
           id: generateUUID(),
           documentId: documentId,
           isResolved: false,
@@ -69,10 +84,7 @@ export const requestSuggestions = ({
         suggestions.push(suggestion);
       }
 
-      if (session.user?.id) {
-        const userId = session.user.id;
-
-        await saveSuggestions({
+      await saveSuggestions({
           suggestions: suggestions.map((suggestion) => ({
             ...suggestion,
             userId,
