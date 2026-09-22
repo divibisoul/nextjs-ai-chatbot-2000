@@ -2,8 +2,9 @@ import { randomUUID } from 'node:crypto';
 import { sendFromN06, type N06Peer } from '../soul-mesh/N06PeerAdapter';
 import { n06Processor } from './N06Processor';
 
+export type N06SynergyNucleus = 'N06' | N06Peer;
 export type N06SynergyStep = { nucleus: N06Peer; capability: string; payload: unknown };
-export type N06SynergyResult = { correlationId: string; steps: Array<{ nucleus: N06Peer; capability: string; result: unknown }> };
+export type N06SynergyResult = { correlationId: string; steps: Array<{ nucleus: N06SynergyNucleus; capability: string; result: unknown }> };
 
 /**
  * Cooperative execution: N06 composes specialized peer IAs instead of duplicating them.
