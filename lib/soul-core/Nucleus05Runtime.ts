@@ -5,18 +5,26 @@ import { NUCLEUS_05_TOOL_IDS, createNucleus05Tools, type Nucleus05ToolContext, t
 import { NUCLEUS_06_CAPABILITIES } from './Nucleus06Capabilities';
 import { getN06Capabilities } from '@/lib/soul-mesh/N06CapabilityDispatcher';
 
-type RuntimeTool = { execute?: (input: unknown, options: { toolCallId: string; messages: unknown[] }) => unknown | Promise<unknown> };
-
 /** Connects Mesh execution to the existing N06 tool implementations. */
 export function attachNucleus05Tools(context: Nucleus05ToolContext) {
   const tools = createNucleus05Tools(context);
   if (!n06Processor.listHandlers().includes('support.tool-execution')) {
     n06Processor.registerHandler('support.tool-execution', async (input: unknown) => {
       const request = input as { toolId?: string; args?: unknown };
-      if (!request.toolId || !NUCLEUS_05_TOOL_IDS.includes(request.toolId as Nucleus05ToolId)) throw new Error(`Unknown Nucleus 06 tool: ${request.toolId ?? 'undefined'}`);
-      const toolDefinition = tools[request.toolId as keyof typeof tools] as unknown as RuntimeTool;
-      if (typeof toolDefinition?.execute !== 'function') throw new Error(`Tool is not executable: ${request.toolId}`);
-      return toolDefinition.execute(request.args ?? {}, { toolCallId: crypto.randomUUID(), messages: [] });
+      const toolId = typeof request.toolId === 'string'
+        ? NUCLEUS_05_TOOL_IDS.find((id) => id === request.toolId)
+        : undefined;
+      if (!toolId) {
+        throw new Error(`Unknown Nucleus 06 tool: ${request.toolId ?? 'undefined'}`);
+      }
+      const toolDefinition = tools[toolId];
+      if (!toolDefinition || typeof toolDefinition.execute !== 'function') {
+        throw new Error(`Tool is not executable: ${toolId}`);
+      }
+      return Reflect.apply(toolDefinition.execute, toolDefinition, [
+        request.args ?? {},
+        { toolCallId: crypto.randomUUID(), messages: [] },
+      ]);
     });
   }
   return nucleus05Processor;
