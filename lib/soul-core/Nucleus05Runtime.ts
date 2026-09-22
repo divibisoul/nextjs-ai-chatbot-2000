@@ -1,5 +1,6 @@
 import type { Nucleus05Context } from './Nucleus05Processor';
 import { nucleus05Processor } from './Nucleus05Processor';
+import { n06Processor } from './N06Processor';
 import { NUCLEUS_05_TOOL_IDS, createNucleus05Tools, type Nucleus05ToolContext } from './Nucleus05ToolRegistry';
 import { NUCLEUS_06_CAPABILITIES } from './Nucleus06Capabilities';
 import { getN06Capabilities } from '@/lib/soul-mesh/N06CapabilityDispatcher';
@@ -7,8 +8,8 @@ import { getN06Capabilities } from '@/lib/soul-mesh/N06CapabilityDispatcher';
 /** Connects Mesh execution to the existing N06 tool implementations. */
 export function attachNucleus05Tools(context: Nucleus05ToolContext) {
   const tools = createNucleus05Tools(context);
-  if (!nucleus05Processor.listHandlers().includes('tool-execution')) {
-    nucleus05Processor.registerHandler('tool-execution', async (input: unknown) => {
+  if (!n06Processor.listHandlers().includes('support.tool-execution')) {
+    n06Processor.registerHandler('support.tool-execution', async (input: unknown) => {
       const request = input as { toolId?: string; args?: unknown };
       if (!request.toolId || !NUCLEUS_05_TOOL_IDS.includes(request.toolId as Nucleus05ToolId)) throw new Error(`Unknown Nucleus 06 tool: ${request.toolId ?? 'undefined'}`);
       const toolDefinition = tools[request.toolId as keyof typeof tools];
