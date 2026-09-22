@@ -30,5 +30,7 @@ export const NUCLEUS_06_AFFINITY: readonly Nucleus06Affinity[] = [
 ] as const;
 
 export function affinityFor(nucleus: NucleusId): Nucleus06Affinity {
-  return NUCLEUS_06_AFFINITY.find((entry) => entry.nucleus === nucleus)!;
+  const affinity = NUCLEUS_06_AFFINITY.find((entry) => entry.nucleus === nucleus);
+  if (!affinity) throw new Error(`NUCLEUS_06_AFFINITY_NOT_FOUND:${nucleus}`);
+  return affinity;
 }
