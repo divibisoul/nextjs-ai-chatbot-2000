@@ -66,7 +66,7 @@ export const requestSuggestions = ({
           continue;
         }
 
-        const suggestion: Suggestion = {
+        const suggestion: Omit<Suggestion, 'userId' | 'createdAt' | 'documentCreatedAt'> = {
           originalText: originalSentence,
           suggestedText: suggestedSentence,
           description,
