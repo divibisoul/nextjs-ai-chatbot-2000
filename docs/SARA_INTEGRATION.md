@@ -15,5 +15,6 @@
 5. o contexto regenerativo é incorporado à geração;
 6. a execução cognitiva e o streaming continuam pertencendo ao N06.
 
-SARA permanece autoridade exclusiva do seu ciclo regenerativo. N06 não duplica
-ARA, ETR ou ITR.
+Além de `sara.cycle`, o cliente server-side agora expõe, de forma aditiva, `sara.health`, `sara.capabilities`, `sara.state`, `sara.audit`, `sara.regenerate` e o fluxo de rastreabilidade compatível com o restante da federação. Isso permite que N06 use a semelhança funcional entre cognição, auditoria e governança sem absorver a propriedade dos módulos do SARA.
+
+SARA permanece autoridade exclusiva do seu ciclo regenerativo. N06 não duplica ARA, ETR ou ITR.
