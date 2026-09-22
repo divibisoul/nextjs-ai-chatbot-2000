@@ -8,6 +8,12 @@ import type { InferUITool, UIMessage } from 'ai';
 import type { ArtifactKind } from '@/components/artifact';
 import type { Suggestion } from './db/schema';
 
+/** UI-safe suggestion payload emitted over the stream. Database-only ownership/timestamps stay server-side. */
+export type SuggestionStream = Pick<
+  Suggestion,
+  'id' | 'documentId' | 'originalText' | 'suggestedText' | 'description' | 'isResolved'
+>;
+
 export type DataPart = { type: 'append-message'; message: string };
 
 export const messageMetadataSchema = z.object({
@@ -35,7 +41,7 @@ export type CustomUIDataTypes = {
   imageDelta: string;
   sheetDelta: string;
   codeDelta: string;
-  suggestion: Suggestion;
+  suggestion: SuggestionStream;
   appendMessage: string;
   id: string;
   title: string;
