@@ -1,6 +1,6 @@
 import type { SoulMeshTransportKind } from './SoulMeshProtocol';
 
-export const N06_PEERS = ['N01', 'N02', 'N03', 'N04', 'N05'] as const;
+export const N06_PEERS = ['N01', 'N02', 'N03', 'N04', 'N05', 'N07'] as const;
 export type N06Peer = (typeof N06_PEERS)[number];
 
 export const N06_IN_CHANNELS = N06_PEERS.map((peer) => `N06.IN.${peer}`) as readonly string[];
