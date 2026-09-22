@@ -34,8 +34,8 @@ jobs:
         run: node --version && pnpm --version
       - name: Install dependencies from lockfile
         run: pnpm install --frozen-lockfile
-      - name: Build
-        run: pnpm run build
+      - name: Web build
+        run: pnpm run build:web
       - name: Lint
         run: pnpm run lint
       - name: Nucleus 05 tests
