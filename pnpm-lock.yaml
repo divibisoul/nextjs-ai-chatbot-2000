@@ -3680,35 +3680,6 @@ packages:
     resolution: {integrity: sha512-hOS089on8RduqdbhvQ5Z37A0ESjsqz6qnRcffsMU3495FuTdqSm+7bhJ29JvIOsBDEEnan5DPu9t3To9VRlMzA==}
     engines: {node: '>=8.10.0'}
 
-  '@redis/bloom@5.0.0(@redis/client@5.0.0)':
-    dependencies:
-      '@redis/client': 5.0.0
-
-  '@redis/client@5.0.0':
-    dependencies:
-      cluster-key-slot: 1.1.2
-
-  '@redis/json@5.0.0(@redis/client@5.0.0)':
-    dependencies:
-      '@redis/client': 5.0.0
-
-  '@redis/search@5.0.0(@redis/client@5.0.0)':
-    dependencies:
-      '@redis/client': 5.0.0
-
-  '@redis/time-series@5.0.0(@redis/client@5.0.0)':
-    dependencies:
-      '@redis/client': 5.0.0
-
-  redis@5.0.0:
-    dependencies:
-      '@redis/bloom': 5.0.0(@redis/client@5.0.0)
-      '@redis/client': 5.0.0
-      '@redis/json': 5.0.0(@redis/client@5.0.0)
-      '@redis/search': 5.0.0(@redis/client@5.0.0)
-      '@redis/time-series': 5.0.0(@redis/client@5.0.0)
-
-
   reflect.getprototypeof@1.0.10:
     resolution: {integrity: sha512-00o4I+DVrefhv+nX0ulyi3biSHCPDe+yLv5o/p6d/UVlirijB8E16FtfwSAi4g3tcqrQ4lRAqQSoFEZJehYEcw==}
     engines: {node: '>= 0.4'}
