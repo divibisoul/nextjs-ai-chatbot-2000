@@ -8,6 +8,7 @@ import { requestSuggestions } from '@/lib/ai/tools/request-suggestions';
 import { NUCLEUS_06_TOOL_IDS, type Nucleus06ToolId } from './N06ToolIds';
 
 export interface Nucleus06ToolContext { session: Session; dataStream: UIMessageStreamWriter<ChatMessage>; }
+export type Nucleus05ToolContext = Nucleus06ToolContext;
 
 /** Canonical registry for tools implemented by N06. */
 export function createNucleus06Tools(context: Nucleus06ToolContext) {
