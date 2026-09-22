@@ -1,4 +1,4 @@
-name: N02 validation diagnostics
+name: N06 validation diagnostics
 on:
   push:
     branches: [main]
@@ -22,14 +22,14 @@ jobs:
           mkdir -p "$RUNNER_TEMP/n02-first-step"
           { date -u; uname -a || true; cat /etc/os-release || true; node --version || true; npm --version || true; df -hT || true; free -h || true; env | cut -d= -f1 | sort || true; } 2>&1 | tee "$RUNNER_TEMP/n02-first-step/runner.log"
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: pnpm
       - uses: pnpm/action-setup@v4
         with:
           version: ${{ env.PNPM_VERSION }}
           run_install: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
       - name: Verify toolchain
         run: node --version && pnpm --version
       - name: Install dependencies from lockfile
