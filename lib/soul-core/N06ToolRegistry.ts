@@ -2,16 +2,18 @@ import { createDocument } from '@/lib/ai/tools/create-document';
 import { updateDocument } from '@/lib/ai/tools/update-document';
 import { getWeather } from '@/lib/ai/tools/get-weather';
 import { requestSuggestions } from '@/lib/ai/tools/request-suggestions';
-import type { N06Context } from './N06Processor';
+import type { Session } from 'next-auth';
+import type { UIMessageStreamWriter } from 'ai';
+import type { ChatMessage } from '@/lib/types';
 
-export interface N06ToolContext { session: unknown; dataStream: unknown; }
+export interface N06ToolContext { session: Session; dataStream: UIMessageStreamWriter<ChatMessage>; }
 
 export function createN06Tools(context: N06ToolContext) {
   return {
-    createDocument: createDocument(context as any),
-    updateDocument: updateDocument(context as any),
+    createDocument: createDocument(context),
+    updateDocument: updateDocument(context),
     getWeather,
-    requestSuggestions: requestSuggestions(context as any),
+    requestSuggestions: requestSuggestions(context),
   };
 }
 
