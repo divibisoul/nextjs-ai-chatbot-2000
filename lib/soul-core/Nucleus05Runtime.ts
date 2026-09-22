@@ -10,8 +10,8 @@ export function attachNucleus05Tools(context: Nucleus05ToolContext) {
   if (!nucleus05Processor.listHandlers().includes('tool-execution')) {
     nucleus05Processor.registerHandler('tool-execution', async (input: unknown) => {
       const request = input as { toolId?: string; args?: unknown };
-      if (!request.toolId || !NUCLEUS_05_TOOL_IDS.includes(request.toolId as any)) throw new Error(`Unknown Nucleus 06 tool: ${request.toolId ?? 'undefined'}`);
-      const toolDefinition = tools[request.toolId as keyof typeof tools] as any;
+      if (!request.toolId || !NUCLEUS_05_TOOL_IDS.includes(request.toolId as Nucleus05ToolId)) throw new Error(`Unknown Nucleus 06 tool: ${request.toolId ?? 'undefined'}`);
+      const toolDefinition = tools[request.toolId as keyof typeof tools];
       if (typeof toolDefinition?.execute !== 'function') throw new Error(`Tool is not executable: ${request.toolId}`);
       return toolDefinition.execute(request.args ?? {});
     });
