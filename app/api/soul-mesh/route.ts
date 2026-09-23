@@ -43,6 +43,14 @@ export async function POST(request:Request){
   if(!rateAllowed(message.source))return result(message,'error',{code:'RATE_LIMITED',retryAfterMs:RATE_WINDOW_MS},429);
   if(!acceptOnce(message.id))return result(message,'error',{code:'REPLAY_DETECTED'},409);
   try{
+    const session=await auth();
+    const userId=typeof session?.user?.id==='string'?session.user.id.trim():'';
+    if(!userId)return result(message,'error',{code:'MESH_USER_ID_REQUIRED'},401);
+    const context:N06MeshExecutionContext={
+      session:createMeshToolSession({userId,source:message.source,correlationId:message.correlationId}),
+      dataStream:meshDataStream,
+      metadata:{mesh:true,source:message.source,correlationId:message.correlationId},
+    };
     if(message.capability==='octacore.execute'){
       const value=message.payload&&typeof message.payload==='object'&&!Array.isArray(message.payload)
         ? message.payload as Record<string,unknown>
@@ -56,18 +64,9 @@ export async function POST(request:Request){
           payload:value.payload,
           job_id:typeof value.job_id==='string'?value.job_id:undefined,
           correlation_id:message.correlationId,
-        },undefined),
+        },context),
       );
     }
-
-    const session=await auth();
-    const userId=typeof session?.user?.id==='string'?session.user.id.trim():'';
-    if(!userId)return result(message,'error',{code:'MESH_USER_ID_REQUIRED'},401);
-    const context:N06MeshExecutionContext={
-      session:createMeshToolSession({userId,source:message.source,correlationId:message.correlationId}),
-      dataStream:meshDataStream,
-      metadata:{mesh:true,source:message.source,correlationId:message.correlationId},
-    };
     return result(message,'response',await createN06Agents(context).execute(message));
   }catch(error){
     const detail=error instanceof Error?error.message:String(error);
