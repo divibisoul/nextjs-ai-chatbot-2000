@@ -57,13 +57,6 @@ let boundInfrastructure: ConsciousnessInfrastructure | null = null;
 const pendingRegistrations: PendingRegistration[] = [];
 const pendingSubscriptions: PendingSubscription[] = [];
 
-/**
- * Binds N06 to an externally owned runtime.
- *
- * No EventBus, state store or registry is created here. Before binding,
- * registration/subscription calls are retained only as explicit pending
- * contracts and are replayed into the supplied authoritative runtime.
- */
 export function bindConsciousnessInfrastructure(
   infrastructure: ConsciousnessInfrastructure,
 ): void {
@@ -180,6 +173,7 @@ export const wormhole: ConsciousnessRegistry = {
 };
 
 export interface MetaThought {
+  id: string;
   input: string;
   output: string;
   metadata?: Record<string, unknown>;
@@ -195,6 +189,7 @@ export type MetaThoughtExecutor = (
 export class MetaConsciousnessModule {
   readonly id = "meta-consciousness";
   private active = false;
+  private thoughtSequence = 0;
   private thoughts: MetaThought[] = [];
 
   constructor(private readonly executor?: MetaThoughtExecutor) {
@@ -255,6 +250,7 @@ export class MetaConsciousnessModule {
     try {
       const result = await this.executor(query, d.context);
       const thought: MetaThought = {
+        id: "thought-" + Date.now().toString(36) + "-" + (this.thoughtSequence++).toString(36),
         input: query,
         output: result.output,
         metadata: result.metadata,
