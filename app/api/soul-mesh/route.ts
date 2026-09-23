@@ -29,7 +29,27 @@ function acceptOnce(id:string):boolean{const now=Date.now();for(const [key,t] of
 function rateAllowed(peer:string):boolean{const now=Date.now();const recent=(peerBuckets.get(peer)??[]).filter(t=>now-t<RATE_WINDOW_MS);if(recent.length>=RATE_LIMIT){peerBuckets.set(peer,recent);return false;}recent.push(now);peerBuckets.set(peer,recent);return true;}
 const declaredMeshCapabilities = () => [...getN06Capabilities(), OCTACORE_MESH_CAPABILITY.id];
 
-function result(message:SoulMeshMessage,kind:'response'|'error',payload:unknown,status=200){return NextResponse.json({protocol:'soul-mesh/1',contractVersion:SOUL_MESH_CONTRACT_VERSION,id:crypto.randomUUID(),correlationId:message.correlationId,source:NUCLEUS_ID,target:message.source,kind,capability:message.capability,payload,timestamp:Date.now(),transport:'HTTP',meta:{runtime:'nextjs-ai-chatbot-2000',transport:'HTTP',encoding:'json',version:SOUL_MESH_CONTRACT_VERSION,nonce:crypto.randomUUID(),traceId:message.correlationId}} satisfies SoulMeshMessage,{status});}
+function result(message:SoulMeshMessage,kind:'response'|'error',payload:unknown,status=200){
+  const id=crypto.randomUUID();
+  const nonce=crypto.randomUUID();
+  const timestamp=Date.now();
+  const legacy={
+    version:'1.0',
+    contractVersion:SOUL_MESH_CONTRACT_VERSION,
+    messageId:id,
+    source:NUCLEUS_ID,
+    target:message.source,
+    timestamp,
+    nonce,
+    correlationId:message.correlationId,
+    type:kind==='error'?'ERROR':'TASK_RESULT',
+    payload:{capability:message.capability??'',payload},
+  };
+  const secret=String(process.env.SOUL_MESH_HMAC_SECRET||'').trim();
+  const hmac=secret?crypto.createHmac('sha256',secret).update(JSON.stringify(legacy),'utf8').digest('hex'):'';
+  const body={protocol:'soul-mesh/1',contractVersion:SOUL_MESH_CONTRACT_VERSION,id,correlationId:message.correlationId,source:NUCLEUS_ID,target:message.source,kind,capability:message.capability,payload,timestamp,transport:'HTTP',nonce,...(hmac?{hmac}:{}),meta:{runtime:'nextjs-ai-chatbot-2000',transport:'HTTP',encoding:'json',version:SOUL_MESH_CONTRACT_VERSION,nonce,traceId:message.correlationId}};
+  return NextResponse.json(body satisfies SoulMeshMessage,{status});
+}
 function createN06Agents(context?:N06MeshExecutionContext){const registry=new N06AgentRegistry();const executable=n06Processor.executableCapabilities();registry.register({id:'N06-cognitive-agent',name:'N06 Cognitive Agent',capabilities:executable,execute:m=>{if(!m.capability)throw new Error('N06_AGENT_CAPABILITY_REQUIRED');return executeN06Capability(m.capability,m.payload,context)}});registry.register({id:'N06-tool-agent',name:'N06 Tool Agent',capabilities:NUCLEUS_06_TOOL_IDS.map(id=>`tool:${id}`),execute:m=>{if(!m.capability)throw new Error('N06_AGENT_CAPABILITY_REQUIRED');return executeN06Capability(m.capability,m.payload,context)}});registry.register({id:'N06-mesh-agent',name:'N06 Mesh Agent',capabilities:['mesh.ping','mesh.describe','mesh.discovery'],execute:async m=>m.capability==='mesh.ping'?{ok:true,nucleus:NUCLEUS_ID,processedAt:Date.now()}:m.capability==='mesh.discovery'?{nucleus:NUCLEUS_ID,peers:await probeAllN06Peers(),structuralPeers:getN06StructuralPeers()}:{nucleus:NUCLEUS_ID,peers:[...PEERS],structuralPeers:[...STRUCTURAL_PEERS],declaredCapabilities:declaredMeshCapabilities(),executableCapabilities:executable,agents:registry.describe(),inChannels:PEERS.map(peer=>`N06.IN.${peer}`),outChannels:PEERS.map(peer=>`N06.OUT.${peer}`)}});return registry;}
 function validMessage(message:unknown):message is SoulMeshMessage{try{validateSoulMeshMessage(message);const value=message as SoulMeshMessage;return value.target===NUCLEUS_ID&&value.source!==NUCLEUS_ID&&value.kind==='request'&&typeof value.capability==='string'&&Math.abs(Date.now()-value.timestamp)<=MAX_CLOCK_SKEW_MS;}catch{return false;}}
 export async function GET(){return NextResponse.json({ok:true,nucleus:NUCLEUS_ID,protocol:'soul-mesh/1',contractVersion:SOUL_MESH_CONTRACT_VERSION,peers:[...PEERS],structuralPeers:[...STRUCTURAL_PEERS],capabilities:[...getN06Capabilities(),'octacore.execute'],executableCapabilities:[...n06Processor.executableCapabilities(),'octacore.execute'],agents:createN06Agents().describe(),channels:{in:PEERS.map(p=>`N06.IN.${p}`),out:PEERS.map(p=>`N06.OUT.${p}`)}});}
