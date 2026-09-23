@@ -1,4 +1,4 @@
-import { n06Processor } from "../../lib/soul-core/N06Processor";
+import { n06Processor } from "../../../lib/soul-core/N06Processor";
 
 export type OrientationStep = {
   id: string;
