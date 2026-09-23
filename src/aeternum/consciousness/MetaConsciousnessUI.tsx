@@ -68,7 +68,7 @@ export const MetaConsciousnessUI: React.FC = () => {
       <div className="flex-1 space-y-3 overflow-y-auto p-4">
         {thoughts.map((thought, index) => (
           <article
-            key={thought.timestamp + index}
+            key={thought.id}
             className="rounded border border-cyan-500/10 p-3"
           >
             <div className="text-[11px] text-cyan-400">
