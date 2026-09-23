@@ -11,12 +11,12 @@ test("M4 does not fabricate cognition when no executor is bound", async () => {
 });
 
 test("M4 delegates cognition to its injected real executor", async () => {
-  const module = new MindModule(async (input, context) => ({
+  const mindModule = new MindModule(async (input, context) => ({
     content: "processed:" + input,
     metadata: { contextKeys: Object.keys(context) },
   }));
 
-  const result = await module.process("hello", { source: "test" });
+  const result = await mindModule.process("hello", { source: "test" });
   assert.equal(result.status, "completed");
   assert.equal(result.execution, "real");
   assert.equal(result.output, "processed:hello");
