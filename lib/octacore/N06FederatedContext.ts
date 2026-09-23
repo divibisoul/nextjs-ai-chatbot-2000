@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { sendTo } from '@/lib/soul-mesh/peer-client';
 
 export type N06FederatedContextRequest = {
@@ -43,7 +44,7 @@ export async function executeN06FederatedContext(
 ): Promise<N06FederatedContextResult> {
   const input = request.input.trim();
   if (!input) throw new Error('OCTACORE_INPUT_REQUIRED');
-  const correlationId = request.correlationId?.trim() || crypto.randomUUID();
+  const correlationId = request.correlationId?.trim() || randomUUID();
 
   const response = await sendTo(
     'N07',
