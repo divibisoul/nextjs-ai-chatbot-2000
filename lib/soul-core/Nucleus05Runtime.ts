@@ -5,6 +5,8 @@ import { NUCLEUS_05_TOOL_IDS, createNucleus05Tools, type Nucleus05ToolContext, t
 import { NUCLEUS_06_CAPABILITIES } from './Nucleus06Capabilities';
 import { getN06Capabilities } from '@/lib/soul-mesh/N06CapabilityDispatcher';
 
+const OCTACORE_EXECUTION_CAPABILITY = 'octacore.execute';
+
 /** Connects Mesh execution to the existing N06 tool implementations. */
 export function attachNucleus05Tools(context: Nucleus05ToolContext) {
   const tools = createNucleus05Tools(context);
@@ -40,9 +42,10 @@ export function getN06DeclaredCapabilities(): readonly string[] {
   return Object.freeze([
     ...NUCLEUS_06_CAPABILITIES,
     ...NUCLEUS_05_TOOL_IDS.map((id) => `tool:${id}`),
+    OCTACORE_EXECUTION_CAPABILITY,
   ]);
 }
 
 export function getN06ExecutableCapabilities(): readonly string[] {
-  return Object.freeze(getN06Capabilities());
+  return Object.freeze([...getN06Capabilities(), OCTACORE_EXECUTION_CAPABILITY]);
 }

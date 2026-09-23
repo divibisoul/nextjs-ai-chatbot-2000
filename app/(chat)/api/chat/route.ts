@@ -38,6 +38,7 @@ import type { ChatMessage } from '@/lib/types';
 import type { ChatModel } from '@/lib/ai/models';
 import type { VisibilityType } from '@/components/visibility-selector';
 import { extractMessageText, saraChatEnabled, saraConfigured, saraCycle } from '@/lib/sara/SARAClient';
+import { executeN06FederatedContext } from '@/lib/octacore/N06FederatedContext';
 
 export const maxDuration = 60;
 
@@ -158,21 +159,58 @@ export async function POST(request: Request) {
       const userText = extractMessageText(message);
       if (userText) {
         try {
-          const sara = await saraCycle(userText, id + ':sara');
-          saraContext = [
-            'SARA_REGENERATIVE_CONTEXT',
-            'cycle_id=' + sara.cycle_id,
-            'converged=' + String(sara.converged ?? false),
-            'rollback_performed=' + String(sara.rollback_performed ?? false),
-            'trace_hash=' + String(sara.trace_hash ?? ''),
-            'evidence_hash=' + String(sara.execution_report?.evidence_hash ?? ''),
-            'final_state:',
-            String(sara.final_state ?? ''),
-          ].join('\n');
+          if (process.env.OCTACORE_FEDERATED_CONTEXT_ENABLED?.trim().toLowerCase() === 'true') {
+            const fileParts = Array.isArray((message as any)?.parts)
+              ? (message as any).parts.filter((part: any) => part?.type === 'file')
+              : [];
+            const perceptionPayload = fileParts.length > 0
+              ? { capability: 'mesh.describe', files: fileParts }
+              : undefined;
+            const federated = await executeN06FederatedContext({
+              input: userText,
+              correlationId: id + ':octacore',
+              researchPayload: {
+                query: userText,
+                source: 'N06_CHAT',
+                chat_id: id,
+              },
+              perceptionPayload,
+              allowResearchSkip: true,
+            });
+            const cycle = federated.cycle as any;
+            saraContext = [
+              'OCTACORE_FEDERATED_CONTEXT',
+              'correlation_id=' + String(federated.correlationId ?? ''),
+              'barrier=' + String(federated.barrier ?? 'pre'),
+              'research=' + JSON.stringify(federated.research ?? {}),
+              'perception=' + JSON.stringify(federated.perception ?? {}),
+              'cycle_id=' + String(cycle?.cycle_id ?? ''),
+              'converged=' + String(cycle?.converged ?? false),
+              'rollback_performed=' + String(cycle?.rollback_performed ?? false),
+              'trace_hash=' + String(cycle?.trace_hash ?? ''),
+              'evidence_hash=' + String(cycle?.execution_report?.evidence_hash ?? ''),
+              'final_state:',
+              String(cycle?.final_state ?? ''),
+            ].join('\n');
+          } else {
+            const sara = await saraCycle(userText, id + ':sara');
+            saraContext = [
+              'SARA_REGENERATIVE_CONTEXT',
+              'cycle_id=' + sara.cycle_id,
+              'converged=' + String(sara.converged ?? false),
+              'rollback_performed=' + String(sara.rollback_performed ?? false),
+              'trace_hash=' + String(sara.trace_hash ?? ''),
+              'evidence_hash=' + String(sara.execution_report?.evidence_hash ?? ''),
+              'final_state:',
+              String(sara.final_state ?? ''),
+            ].join('\n');
+          }
         } catch (error) {
           return Response.json(
             {
-              error: 'SARA_UNAVAILABLE',
+              error: process.env.OCTACORE_FEDERATED_CONTEXT_ENABLED?.trim().toLowerCase() === 'true'
+                ? 'OCTACORE_FEDERATED_CONTEXT_UNAVAILABLE'
+                : 'SARA_UNAVAILABLE',
               message: error instanceof Error ? error.message : 'SARA request failed',
             },
             { status: 502 },
