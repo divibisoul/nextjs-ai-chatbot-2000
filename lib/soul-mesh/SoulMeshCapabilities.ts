@@ -1,5 +1,14 @@
 export type SoulMeshCapability = { id: string; version: string; description: string; request: boolean; response: boolean; events: boolean };
 
+const OCTACORE_EXECUTION_CAPABILITY: SoulMeshCapability = {
+  id: 'octacore.execute',
+  version: '1.0',
+  description: 'Octacore execution wrapper over canonical N06 dispatcher',
+  request: true,
+  response: true,
+  events: false,
+};
+
 export const SOUL_MESH_CAPABILITIES: SoulMeshCapability[] = [
   { id: 'ai-pilot', version: '1.0', description: 'Provider-agnostic AI pilot boundary', request: true, response: true, events: true },
   { id: 'tool-execution', version: '1.0', description: 'Execution of registered Nucleus 05 tools', request: true, response: true, events: true },
@@ -9,3 +18,5 @@ export const SOUL_MESH_CAPABILITIES: SoulMeshCapability[] = [
   { id: 'streaming', version: '1.0', description: 'Streaming AI/tool results', request: true, response: true, events: true },
   { id: 'mesh-communication', version: '1.0', description: 'Soul Mesh communication', request: true, response: true, events: true },
 ];
+
+export const OCTACORE_MESH_CAPABILITY = OCTACORE_EXECUTION_CAPABILITY;
