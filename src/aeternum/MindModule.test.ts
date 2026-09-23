@@ -3,8 +3,8 @@ import test from "node:test";
 import { MindModule } from "./MindModule";
 
 test("M4 does not fabricate cognition when no executor is bound", async () => {
-  const module = new MindModule();
-  const result = await module.process("teste");
+  const mindModule = new MindModule();
+  const result = await mindModule.process("teste");
   assert.equal(result.status, "adapter_unbound");
   assert.equal(result.execution, "not_claimed");
   assert.equal(result.output, undefined);
