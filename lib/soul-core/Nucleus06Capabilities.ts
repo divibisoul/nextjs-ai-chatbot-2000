@@ -15,8 +15,7 @@ export type Nucleus06Capability =
   | 'support.tool-execution'
   | 'support.streaming'
   | 'support.mesh'
-  | 'support.ai-pilot'
-  | 'octacore.execute';
+  | 'support.ai-pilot';
 
 export const NUCLEUS_06_CAPABILITIES: readonly Nucleus06Capability[] = [
   'support.context',
@@ -26,7 +25,6 @@ export const NUCLEUS_06_CAPABILITIES: readonly Nucleus06Capability[] = [
   'support.streaming',
   'support.mesh',
   'support.ai-pilot',
-  'octacore.execute',
 ] as const;
 
 export const NUCLEUS_06_ROLE: Nucleus06Role = 'support';
