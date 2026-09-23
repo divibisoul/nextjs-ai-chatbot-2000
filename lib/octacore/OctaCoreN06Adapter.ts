@@ -1,6 +1,6 @@
-import { executeN06Capability } from '@/lib/soul-mesh/N06CapabilityDispatcher';
+import { executeN06Capability, type N06MeshExecutionContext } from '@/lib/soul-mesh/N06CapabilityDispatcher';
 import { authorizeN06Capability } from '@/lib/soul-core/N06ExecutionPolicy';
-import { n06Processor, type N06Context } from '@/lib/soul-core/N06Processor';
+import { n06Processor } from '@/lib/soul-core/N06Processor';
 
 export type OctaCoreN06Request = {
   capability: string;
@@ -11,7 +11,7 @@ export type OctaCoreN06Request = {
 
 export async function executeOctaCoreN06(
   request: OctaCoreN06Request,
-  context?: N06Context,
+  context?: N06MeshExecutionContext,
 ) {
   if (!request || typeof request !== 'object') {
     throw new Error('OCTACORE_N06_REQUEST_REQUIRED');
