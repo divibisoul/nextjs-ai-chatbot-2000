@@ -55,11 +55,8 @@ export async function executeN06FederatedContext(
       allow_research_skip: Boolean(request.allowResearchSkip),
     },
     60_000,
+    correlationId,
   );
 
-  if (response.correlationId !== correlationId) {
-    // sendTo generates the correlation itself, so use the returned value as the authoritative hop ID.
-    return extractResult(response, response.correlationId);
-  }
   return extractResult(response, correlationId);
 }
