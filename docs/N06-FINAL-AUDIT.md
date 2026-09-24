@@ -33,8 +33,14 @@ N06 permanece uma IA independente, com agentes e capacidades próprias. A Soul M
 
 A integração física simultânea dos seis runtimes não é declarada como validada apenas por inspeção do GitHub. Ela requer os processos implantados e acessíveis simultaneamente.
 
-## Estado
+## Estado atual após a reabertura das áreas congeladas
 
-N06 estrutural: 95%.
+- Os módulos de consciência permanecem presentes e sem exclusão do legado.
+- EventBus, HortaCore e Wormhole privados do overlay de consciência foram removidos; N06 agora exige binding explícito de infraestrutura externa.
+- O contrato de infraestrutura possui testes para confirmar que o runtime fornecido pelo núcleo proprietário é a única autoridade.
+- A integração física simultânea dos runtimes ainda não é declarada como E2E comprovada somente pela inspeção dos repositórios.
+- O percentual histórico de 95% foi mantido abaixo apenas como referência histórica e não deve ser usado como estado atual.
 
-O núcleo está preparado para integrar-se ao Mesh comum. O restante é comissionamento E2E e harmonização final da autenticação entre todos os núcleos.
+### Referência histórica
+
+O relatório anterior registrava “N06 estrutural: 95%”. Esse número era uma estimativa de engenharia de uma etapa anterior e não representa a medição atual. O estado atual é descrito por evidência e gates, sem percentual sintético.
