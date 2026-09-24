@@ -1,3 +1,5 @@
+import { executeN06Cognition } from "./N06CognitionAdapter";
+
 export type Listener<T = unknown> = (data: T) => void | Promise<void>;
 export type Unsubscribe = () => void;
 
@@ -192,7 +194,14 @@ export class MetaConsciousnessModule {
   private thoughtSequence = 0;
   private thoughts: MetaThought[] = [];
 
-  constructor(private readonly executor?: MetaThoughtExecutor) {
+  constructor(
+    private readonly executor: MetaThoughtExecutor = async (query, context) => {
+      const result = await executeN06Cognition(query, {
+        ...(context && typeof context === "object" ? context as Record<string, unknown> : {}),
+      });
+      return { output: result.text, metadata: result.metadata };
+    },
+  ) {
     wormhole.register(this.id, this, {
       type: "engine",
       version: "1.0.0",
@@ -236,14 +245,6 @@ export class MetaConsciousnessModule {
 
     const query = d.query.trim();
     if (!query) return;
-
-    if (!this.executor) {
-      void nervoVago.emit("meta.unbound", {
-        module: this.id,
-        reason: "executor cognitivo não conectado",
-      });
-      return;
-    }
 
     const startedAt = Date.now();
 
