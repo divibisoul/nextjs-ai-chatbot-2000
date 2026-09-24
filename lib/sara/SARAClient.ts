@@ -22,10 +22,13 @@ export function saraChatEnabled(): boolean {
 }
 
 export function extractMessageText(message: ChatMessage): string {
-  const parts = Array.isArray((message as any)?.parts) ? (message as any).parts : [];
-  return parts
-    .filter((part: any) => part?.type === 'text' && typeof part?.text === 'string')
-    .map((part: any) => part.text)
+  if (!message || typeof message !== 'object') return '';
+  const candidate = message as { parts?: unknown };
+  if (!Array.isArray(candidate.parts)) return '';
+  return candidate.parts
+    .filter((part): part is { type?: unknown; text?: unknown } => Boolean(part) && typeof part === 'object')
+    .filter((part) => part.type === 'text' && typeof part.text === 'string')
+    .map((part) => part.text as string)
     .join('\n')
     .trim();
 }
@@ -37,17 +40,18 @@ export async function saraCycle(input: string, cycleId?: string, context?: SaraF
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 30_000);
   try {
+    const correlationId = cycleId?.trim() || crypto.randomUUID();
     const response = await fetch(BASE_URL() + '/v1/cycle', {
       method: 'POST',
       headers: {
         authorization: 'Bearer ' + TOKEN(),
         'content-type': 'application/json',
         accept: 'application/json',
-        ...(cycleId ? { 'X-Correlation-ID': cycleId } : {}),
+        'X-Correlation-ID': correlationId,
       },
       body: JSON.stringify({
         input,
-        cycle_id: cycleId,
+        cycle_id: correlationId,
         ...(context ? { context: { ...context, client: context.client ?? 'n06' } } : {}),
       }),
       signal: controller.signal,
