@@ -1,3 +1,13 @@
+export type SaraFederatedContext = {
+  session_id?: string;
+  client?: string;
+  research_snippets?: string[];
+  user_feedback_refs?: string[];
+  pipeline?: Record<string, unknown>;
+  probabilistic?: Record<string, unknown>;
+  scenarios?: Array<{ name: string; note: string }>;
+} & Record<string, unknown>;
+
 import type { ChatMessage } from '@/lib/types';
 
 const BASE_URL = () => (process.env.SARA_BASE_URL ?? '').trim().replace(/\/$/, '');
@@ -12,30 +22,38 @@ export function saraChatEnabled(): boolean {
 }
 
 export function extractMessageText(message: ChatMessage): string {
-  const parts = Array.isArray((message as any)?.parts) ? (message as any).parts : [];
-  return parts
-    .filter((part: any) => part?.type === 'text' && typeof part?.text === 'string')
-    .map((part: any) => part.text)
+  if (!message || typeof message !== 'object') return '';
+  const candidate = message as { parts?: unknown };
+  if (!Array.isArray(candidate.parts)) return '';
+  return candidate.parts
+    .filter((part): part is { type?: unknown; text?: unknown } => Boolean(part) && typeof part === 'object')
+    .filter((part) => part.type === 'text' && typeof part.text === 'string')
+    .map((part) => part.text as string)
     .join('\n')
     .trim();
 }
 
-export async function saraCycle(input: string, cycleId?: string) {
+export async function saraCycle(input: string, cycleId?: string, context?: SaraFederatedContext) {
   if (!saraConfigured()) throw new Error('SARA_NOT_CONFIGURED');
   if (!input.trim()) throw new Error('SARA_INPUT_REQUIRED');
 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 30_000);
   try {
+    const correlationId = cycleId?.trim() || crypto.randomUUID();
     const response = await fetch(BASE_URL() + '/v1/cycle', {
       method: 'POST',
       headers: {
         authorization: 'Bearer ' + TOKEN(),
         'content-type': 'application/json',
         accept: 'application/json',
-        ...(cycleId ? { 'X-Correlation-ID': cycleId } : {}),
+        'X-Correlation-ID': correlationId,
       },
-      body: JSON.stringify({ input, cycle_id: cycleId }),
+      body: JSON.stringify({
+        input,
+        cycle_id: correlationId,
+        ...(context ? { context: { ...context, client: context.client ?? 'n06' } } : {}),
+      }),
       signal: controller.signal,
       cache: 'no-store',
     });
@@ -109,14 +127,30 @@ export async function saraState(): Promise<Record<string, unknown>> {
   return saraAuxRequest('/v1/state');
 }
 
-export async function saraAudit(input: string, correlationId?: string): Promise<Record<string, unknown>> {
+export async function saraAudit(
+  input: string,
+  correlationId?: string,
+  context?: SaraFederatedContext,
+): Promise<Record<string, unknown>> {
   if (!input.trim()) throw new Error('SARA_INPUT_REQUIRED');
-  return saraAuxRequest('/v1/audit', { method: 'POST', body: { input }, correlationId });
+  return saraAuxRequest('/v1/audit', {
+    method: 'POST',
+    body: { input, ...(context ? { context: { ...context, client: context.client ?? 'n06' } } : {}) },
+    correlationId,
+  });
 }
 
-export async function saraRegenerate(input: string, correlationId?: string): Promise<Record<string, unknown>> {
+export async function saraRegenerate(
+  input: string,
+  correlationId?: string,
+  context?: SaraFederatedContext,
+): Promise<Record<string, unknown>> {
   if (!input.trim()) throw new Error('SARA_INPUT_REQUIRED');
-  return saraAuxRequest('/v1/regenerate', { method: 'POST', body: { input }, correlationId });
+  return saraAuxRequest('/v1/regenerate', {
+    method: 'POST',
+    body: { input, ...(context ? { context: { ...context, client: context.client ?? 'n06' } } : {}) },
+    correlationId,
+  });
 }
 
 
