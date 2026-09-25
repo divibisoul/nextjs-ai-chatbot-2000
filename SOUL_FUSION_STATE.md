@@ -19,6 +19,10 @@ N06 <-> N05 <-> N04
 - N05 and N04 have composable capability models.
 - N06 synergy was deepened to include agent participation rather than capability names alone.
 
+## Current seven-nucleus extension
+
+The original coordination record is preserved. Current N06 code now recognizes N07 as an active federated peer, while N07 remains a distinct final commissioning stage. The canonical peer count for N06 is six peers (N01, N02, N03, N04, N05, N07) with six inbound and six outbound logical channels.
+
 ## Required next work
 1. Audit the actual N05 agent registry/execution path.
 2. Audit N06 agent registry/execution path.
