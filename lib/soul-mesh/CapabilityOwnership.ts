@@ -1,4 +1,4 @@
-export type NucleusId = 'N01'|'N02'|'N03'|'N04'|'N05'|'N06';
+export type NucleusId = 'N01'|'N02'|'N03'|'N04'|'N05'|'N06'|'N07';
 export type Ownership = { owner: NucleusId; fallback: NucleusId[] };
 export const N06_OWNERSHIP: Record<string, Ownership> = {
   'cognitive.': { owner: 'N06', fallback: ['N05','N02'] },
