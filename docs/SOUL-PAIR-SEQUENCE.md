@@ -49,6 +49,10 @@ The optimization sequence is N06-N05-N04-N03-N02-N01. Runtime delegation may sti
 
 Only after the current adjacent pair is structurally coherent do we move the optimization focus to the next adjacent pair. System-wide auditing continues in parallel so changes never create incompatible contracts above or below the active pair.
 
+## Seven-nucleus extension
+
+The original six-nucleus sequence remains the preserved engineering-order baseline. N07 is now admitted as the final federation/commissioning peer after the N01–N06 adjacent-pair fronts stabilize. This does not erase the historical pair sequence or change ownership; it adds the final N01↔N06↔N07 closure stage.
+
 ## Verification status
 
 Runtime execution may be unavailable during repository-only implementation. In that case, structural readiness is recorded separately from live commissioning; inability to execute a runtime test is never treated as permission to stop structural integration.
