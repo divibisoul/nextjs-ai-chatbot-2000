@@ -34,6 +34,10 @@ The map is an architectural contract, not proof of a live network connection.
 A connection is only considered active after transport, endpoint, correlation,
 acknowledgement and health-check evidence exist.
 
+## Current seven-nucleus extension
+
+The original sections above are retained as their historical six-nucleus audit snapshot. The current Mesh topology extends N06's peer set to N01, N02, N03, N04, N05 and N07. The canonical runtime, peer adapter, channel matrix, API endpoint and HMAC path are the current implementation authorities. This extension changes topology only; it does not transfer ownership of existing N01–N06 capabilities to N07.
+
 ## Tool affinity
 
 The existing document/artifact/weather/suggestion tools remain available through
