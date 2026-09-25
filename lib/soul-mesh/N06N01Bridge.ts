@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 
-export type SoulNucleusId = 'N01'|'N02'|'N03'|'N04'|'N05'|'N06';
+export type SoulNucleusId = 'N01'|'N02'|'N03'|'N04'|'N05'|'N06'|'N07';
 export type N06MeshRequest = {
   protocol: 'soul-mesh/1';
   id: string;
@@ -12,6 +12,7 @@ export type N06MeshRequest = {
   payload: unknown;
   timestamp: number;
   transport: 'http';
+  meta?: { runtime?: string; transport?: string; encoding?: string; version?: string; nonce?: string; traceId?: string };
 };
 
 export type N06N01BridgeOptions = {
@@ -21,7 +22,7 @@ export type N06N01BridgeOptions = {
   retries?: number;
 };
 
-const DEFAULT_PATH = '/mesh/in';
+const DEFAULT_PATH = '/api/soul-mesh';
 const DEFAULT_TIMEOUT = 30_000;
 const DEFAULT_RETRIES = 2;
 
@@ -55,15 +56,42 @@ export class N06N01Bridge {
       const timer = setTimeout(() => controller.abort(), this.timeoutMs);
       const started = Date.now();
       try {
+        const message = body as N06MeshRequest;
+        const headers: Record<string, string> = {
+          'content-type': 'application/json',
+          'accept': 'application/json',
+          'x-soul-nucleus': 'N06',
+          'x-soul-target': 'N01',
+          'x-soul-correlation-id': correlationId,
+        };
+        const secret = (process.env.SOUL_MESH_HMAC_SECRET ?? process.env.SOUL_MESH_SECRET ?? '').trim();
+        if (secret) {
+          const { createHmac } = await import('node:crypto');
+          const nonce = randomUUID().replaceAll('-', '').slice(0, 32);
+          message.meta = { runtime: 'nextjs-ai-chatbot-2000-n06-n01-bridge', transport: 'HTTP', encoding: 'json', version: '1.1.0', nonce, traceId: correlationId };
+          const canonical = JSON.stringify({
+            protocol: message.protocol,
+            id: message.id,
+            correlationId: message.correlationId,
+            source: message.source,
+            target: message.target,
+            kind: message.kind,
+            capability: message.capability ?? null,
+            payload: message.payload,
+            timestamp: message.timestamp,
+            transport: message.transport ?? null,
+            meta: message.meta ?? null,
+            nonce,
+          });
+          headers['x-soul-mesh-nonce'] = nonce;
+          headers['x-soul-mesh-hmac'] = createHmac('sha256', secret).update(canonical, 'utf8').digest('hex');
+        } else if (process.env.SOUL_MESH_TOKEN?.trim()) {
+          headers.authorization = `Bearer ${process.env.SOUL_MESH_TOKEN.trim()}`;
+        }
         const response = await fetch(this.endpoint(), {
           method: 'POST',
-          headers: {
-            'content-type': 'application/json',
-            'x-soul-nucleus': 'N06',
-            'x-soul-target': 'N01',
-            'x-correlation-id': correlationId,
-          },
-          body: JSON.stringify(body),
+          headers,
+          body: JSON.stringify(message),
           signal: controller.signal,
         });
         const text = await response.text();
@@ -84,6 +112,7 @@ export class N06N01Bridge {
       protocol: 'soul-mesh/1', id: randomUUID(), correlationId,
       source: 'N06', target: 'N01', kind: 'request', capability, payload,
       timestamp: Date.now(), transport: 'http',
+      meta: { runtime: 'nextjs-ai-chatbot-2000-n06-n01-bridge', transport: 'HTTP', encoding: 'json', version: '1.1.0', traceId: correlationId },
     };
     return this.post(message, correlationId);
   }
