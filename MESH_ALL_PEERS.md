@@ -13,6 +13,10 @@ Health convention: `GET /mesh/health`.
 
 Run `node scripts/soul-mesh-connect-all.mjs` with the five peer URLs configured. The script tests all peers concurrently and reports configured/reachable counts. A configured peer returning an error makes the probe fail; an unconfigured peer is reported rather than treated as a false success.
 
+## Current seven-nucleus extension
+
+The historical five-peer instructions above are preserved. The current implementation extends N06 to peers N01, N02, N03, N04, N05 and N07. The active canonical endpoint is `POST /api/soul-mesh` using the `soul-mesh/1`, contract `1.1.0` envelope. Current diagnostics have been aligned to that endpoint and validate response identity/correlation rather than treating HTTP reachability alone as success.
+
 ## Design rules
 
 - Each N01–N06 remains an independent AI/runtime.
