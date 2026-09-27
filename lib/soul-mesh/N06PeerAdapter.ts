@@ -1,7 +1,7 @@
 import crypto from 'node:crypto';
 import type { SoulMeshMessage, SoulNucleus } from './SoulMeshProtocol';
 import { createSoulMeshMessage, validateSoulMeshMessage } from './SoulMeshProtocol';
-import { createSoulMeshNonce, signSoulMeshMessage } from './SoulMeshHmac';
+import { createSoulMeshNonce, signSoulMeshMessage, verifySoulMeshResponse } from './SoulMeshHmac';
 
 export type N06Peer=Exclude<SoulNucleus,'N06'>;
 /** N07 is now an active federated peer. Final fusion remains a separate commissioning stage. */
@@ -25,7 +25,7 @@ export async function sendFromN06(target:N06Peer,capability:string,payload:unkno
    const response=await fetch(`${peer.url}/api/soul-mesh`,{method:'POST',headers,body:JSON.stringify(message),cache:'no-store',signal:controller.signal});
    const raw:unknown=await response.json().catch(()=>null);
    if(!response.ok)throw new Error(`N06_MESH_HTTP_${response.status}`);
-   validateSoulMeshMessage(raw);const body=raw as SoulMeshMessage;
+   validateSoulMeshMessage(raw);const body=raw as SoulMeshMessage;const secret=meshSecret();if(secret&&!verifySoulMeshResponse(message,body,secret))throw new Error('N06_MESH_RESPONSE_HMAC_INVALID');
    if(body.correlationId!==message.correlationId||body.source!==target||body.target!=='N06')throw new Error('N06_MESH_RESPONSE_INVALID');
    if(body.kind==='error')throw new Error(`N06_REMOTE_ERROR:${target}`);
    return body.payload;
