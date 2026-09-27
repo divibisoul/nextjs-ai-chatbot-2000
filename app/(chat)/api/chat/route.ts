@@ -158,7 +158,10 @@ export async function POST(request: Request) {
       const userText = extractMessageText(message);
       if (userText) {
         try {
-          const sara = await saraCycle(userText, id + ':sara');
+          const sara = await saraCycle(userText, id + ':sara', {
+            session_id: id,
+            client: 'n06',
+          });
           saraContext = [
             'SARA_REGENERATIVE_CONTEXT',
             'cycle_id=' + sara.cycle_id,
