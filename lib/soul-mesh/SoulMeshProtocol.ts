@@ -5,7 +5,7 @@ export type SoulNucleus = typeof SOUL_NUCLEI[number];
 export type SoulMeshKind = 'request' | 'response' | 'event' | 'error';
 export type SoulMeshTransportKind = 'IN_PROCESS' | 'WEBVIEW_BRIDGE' | 'LOOPBACK_HTTP' | 'HTTP' | 'REALTIME';
 export interface SoulMeshMeta { runtime?: string; transport?: string; encoding?: string; version?: string; nonce?: string; traceId?: string; }
-export interface SoulMeshMessage<T=unknown>{protocol:typeof SOUL_MESH_PROTOCOL;contractVersion:typeof SOUL_MESH_CONTRACT_VERSION;id:string;correlationId:string;source:SoulNucleus;target:SoulNucleus;kind:SoulMeshKind;capability?:string;payload:T;timestamp:number;transport?:SoulMeshTransportKind;meta?:SoulMeshMeta;}
+export interface SoulMeshMessage<T=unknown>{protocol:typeof SOUL_MESH_PROTOCOL;contractVersion:typeof SOUL_MESH_CONTRACT_VERSION;id:string;correlationId:string;source:SoulNucleus;target:SoulNucleus;kind:SoulMeshKind;capability?:string;payload:T;timestamp:number;nonce?:string;hmac?:string;transport?:SoulMeshTransportKind;meta?:SoulMeshMeta;}
 export interface SoulMeshTransport{send(message:SoulMeshMessage):Promise<void>;onMessage(handler:(message:SoulMeshMessage)=>void|Promise<void>):()=>void;}
 export function createSoulMeshMessage<T>(input:Omit<SoulMeshMessage<T>,'protocol'|'contractVersion'|'id'|'timestamp'|'correlationId'> & {contractVersion?:typeof SOUL_MESH_CONTRACT_VERSION;correlationId?:string}):SoulMeshMessage<T>{const id=crypto.randomUUID();const {contractVersion,correlationId,...rest}=input;return{...rest,protocol:SOUL_MESH_PROTOCOL,contractVersion:contractVersion??SOUL_MESH_CONTRACT_VERSION,id,timestamp:Date.now(),correlationId:correlationId??id};}
 export function validateSoulMeshMessage(value:unknown):asserts value is SoulMeshMessage{

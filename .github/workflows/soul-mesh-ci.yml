@@ -37,5 +37,7 @@ jobs:
         run: pnpm run test:nucleus05
       - name: Run N06 cognitive runtime and authority tests
         run: pnpm run test:nucleus06
+      - name: Run N06 bidirectional HMAC tests
+        run: pnpm exec tsx --test lib/soul-mesh/SoulMeshHmac.test.ts
       - name: Emit N06 authority evidence
         run: test -s N06-AUTHORITY-INTEGRITY.json

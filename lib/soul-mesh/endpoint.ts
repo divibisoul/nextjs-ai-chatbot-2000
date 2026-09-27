@@ -1,3 +1,4 @@
+import { signSoulMeshResponse } from './SoulMeshHmac';
 import { executeN06Capability, getN06Capabilities } from './N06CapabilityDispatcher';
 import {
   SOUL_MESH_PROTOCOL,
@@ -20,6 +21,11 @@ export function validateMeshMessage(message: SoulMeshMessage, nucleusId: Nucleus
 export function getN06MeshCapabilities() { return getN06Capabilities(); }
 
 function response(message: SoulMeshMessage, kind: 'response' | 'error', payload: unknown): SoulMeshMessage {
+  const secret = process.env.SOUL_MESH_HMAC_SECRET?.trim();
+  if (secret) {
+    const signed = signSoulMeshResponse(message, payload, kind, secret);
+    return { ...signed.message, nonce: signed.nonce, hmac: signed.hmac };
+  }
   return {
     protocol: SOUL_MESH_PROTOCOL,
     contractVersion: SOUL_MESH_CONTRACT_VERSION,
@@ -32,7 +38,11 @@ function response(message: SoulMeshMessage, kind: 'response' | 'error', payload:
     payload,
     timestamp: Date.now(),
     transport: message.transport,
-    meta: { ...(message.meta ?? {}), version: SOUL_MESH_CONTRACT_VERSION, traceId: message.meta?.traceId ?? message.correlationId },
+    meta: {
+      ...(message.meta ?? {}),
+      version: SOUL_MESH_CONTRACT_VERSION,
+      traceId: message.meta?.traceId ?? message.correlationId,
+    },
   };
 }
 

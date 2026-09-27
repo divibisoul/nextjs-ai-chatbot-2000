@@ -1,7 +1,7 @@
 import crypto from 'node:crypto';
 import type { SoulMeshMessage, SoulNucleus } from './SoulMeshProtocol';
 import { createSoulMeshMessage, validateSoulMeshMessage } from './SoulMeshProtocol';
-import { createSoulMeshNonce, signSoulMeshMessage } from './SoulMeshHmac';
+import { createSoulMeshNonce, signSoulMeshMessage, verifySoulMeshResponse } from './SoulMeshHmac';
 
 export type N06Peer=Exclude<SoulNucleus,'N06'>;
 /** N07 is now an active federated peer. Final fusion remains a separate commissioning stage. */
@@ -21,11 +21,11 @@ export async function sendFromN06(target:N06Peer,capability:string,payload:unkno
   const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),timeout(timeoutMs));
   try{
    const secret=meshSecret();const headers:Record<string,string>={'content-type':'application/json',accept:'application/json','x-soul-correlation-id':message.correlationId,'x-soul-trace-id':traceId};
-   if(secret){const nonce=createSoulMeshNonce();message.meta={...(message.meta??{}),nonce,traceId};headers['x-soul-mesh-nonce']=nonce;headers['x-soul-mesh-hmac']=signSoulMeshMessage(message,secret,nonce);}
+   if(secret){const nonce=createSoulMeshNonce();message.nonce=nonce;message.meta={...(message.meta??{}),nonce,traceId};headers['x-soul-mesh-nonce']=nonce;headers['x-soul-mesh-hmac']=signSoulMeshMessage(message,secret,nonce);}
    const response=await fetch(`${peer.url}/api/soul-mesh`,{method:'POST',headers,body:JSON.stringify(message),cache:'no-store',signal:controller.signal});
    const raw:unknown=await response.json().catch(()=>null);
    if(!response.ok)throw new Error(`N06_MESH_HTTP_${response.status}`);
-   validateSoulMeshMessage(raw);const body=raw as SoulMeshMessage;
+   validateSoulMeshMessage(raw);const body=raw as SoulMeshMessage;const responseSecret=meshSecret();if(responseSecret&&!verifySoulMeshResponse(message,body,responseSecret))throw new Error('N06_MESH_RESPONSE_HMAC_INVALID');
    if(body.correlationId!==message.correlationId||body.source!==target||body.target!=='N06')throw new Error('N06_MESH_RESPONSE_INVALID');
    if(body.kind==='error')throw new Error(`N06_REMOTE_ERROR:${target}`);
    return body.payload;
