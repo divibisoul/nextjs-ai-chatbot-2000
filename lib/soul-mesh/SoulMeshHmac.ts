@@ -69,7 +69,7 @@ export function signSoulMeshResponse(
     contractVersion: '1.1.0',
     id: crypto.randomUUID(),
     correlationId: request.correlationId,
-    source: 'N06',
+    source: request.target,
     target: request.source,
     kind,
     capability: request.capability,
