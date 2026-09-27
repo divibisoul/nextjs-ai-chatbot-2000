@@ -6,8 +6,8 @@ import {
   signSoulMeshResponse,
   verifySoulMeshMessage,
   verifySoulMeshResponse,
-} from './SoulMeshHmac.ts';
-import type { SoulMeshMessage } from './SoulMeshProtocol.ts';
+} from './SoulMeshHmac';
+import type { SoulMeshMessage } from './SoulMeshProtocol';
 
 const secret = '0123456789abcdef0123456789abcdef';
 
@@ -38,9 +38,9 @@ test('request HMAC signs and verifies with contractVersion included', () => {
   const message = request();
   const nonce = createSoulMeshNonce();
   const signature = signSoulMeshMessage(message, secret, nonce);
-  assert.equal(verifySoulMeshMessage({ ...message, nonce, hmac: signature }, secret, nonce), true);
+  assert.equal(verifySoulMeshMessage({ ...message, nonce, hmac: signature }, secret, nonce, signature), true);
   assert.equal(
-    verifySoulMeshMessage({ ...message, nonce, hmac: signature.slice(0, -1) + '0' }, secret, nonce),
+    verifySoulMeshMessage({ ...message, nonce, hmac: signature.slice(0, -1) + '0' }, secret, nonce, signature.slice(0, -1) + '0'),
     false,
   );
 });
