@@ -21,7 +21,7 @@ export async function sendFromN06(target:N06Peer,capability:string,payload:unkno
   const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),timeout(timeoutMs));
   try{
    const secret=meshSecret();const headers:Record<string,string>={'content-type':'application/json',accept:'application/json','x-soul-correlation-id':message.correlationId,'x-soul-trace-id':traceId};
-   if(secret){const nonce=createSoulMeshNonce();message.meta={...(message.meta??{}),nonce,traceId};headers['x-soul-mesh-nonce']=nonce;headers['x-soul-mesh-hmac']=signSoulMeshMessage(message,secret,nonce);}
+   if(secret){const nonce=createSoulMeshNonce();message.nonce=nonce;message.meta={...(message.meta??{}),nonce,traceId};headers['x-soul-mesh-nonce']=nonce;headers['x-soul-mesh-hmac']=signSoulMeshMessage(message,secret,nonce);}
    const response=await fetch(`${peer.url}/api/soul-mesh`,{method:'POST',headers,body:JSON.stringify(message),cache:'no-store',signal:controller.signal});
    const raw:unknown=await response.json().catch(()=>null);
    if(!response.ok)throw new Error(`N06_MESH_HTTP_${response.status}`);
