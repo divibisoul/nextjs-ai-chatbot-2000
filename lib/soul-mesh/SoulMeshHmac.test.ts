@@ -50,8 +50,8 @@ test('response HMAC preserves correlation and route identity', () => {
   const signed = signSoulMeshResponse(message, { ok: true }, 'response', secret);
   const response = { ...signed.message, nonce: signed.nonce, hmac: signed.hmac };
   assert.equal(response.contractVersion, '1.1.0');
-  assert.equal(response.source, 'N06');
-  assert.equal(response.target, 'N07');
+  assert.equal(response.source, 'N07');
+  assert.equal(response.target, 'N06');
   assert.equal(verifySoulMeshResponse(message, response, secret), true);
 });
 
