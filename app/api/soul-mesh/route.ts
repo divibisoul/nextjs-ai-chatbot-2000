@@ -23,7 +23,17 @@ const RATE_WINDOW_MS=60_000;
 const seenRequests=new Map<string,number>();
 const peerBuckets=new Map<string,number[]>();
 function secret(){return process.env.SOUL_MESH_HMAC_SECRET ?? '';}
-function authorized(request:Request,message:SoulMeshMessage){const configured=secret();if(!configured)return process.env.NODE_ENV !== 'production';const nonce=request.headers.get('x-soul-mesh-nonce') ?? message.meta?.nonce ?? '';const hmac=request.headers.get('x-soul-mesh-hmac') ?? '';return verifySoulMeshMessage(message,configured,nonce,hmac);}
+function authorized(request:Request,message:SoulMeshMessage){
+  const configured=secret();
+  if(configured){
+    const nonce=request.headers.get('x-soul-mesh-nonce') ?? message.meta?.nonce ?? '';
+    const hmac=request.headers.get('x-soul-mesh-hmac') ?? '';
+    if(nonce && hmac && verifySoulMeshMessage(message,configured,nonce,hmac)) return true;
+  }
+  const token=process.env.SOUL_MESH_TOKEN?.trim();
+  if(token) return request.headers.get('authorization') === `Bearer ${token}`;
+  return !configured && process.env.NODE_ENV !== 'production';
+}
 function acceptOnce(id:string):boolean{const now=Date.now();for(const [key,t] of seenRequests)if(now-t>REPLAY_WINDOW_MS)seenRequests.delete(key);if(seenRequests.has(id))return false;seenRequests.set(id,now);return true;}
 function rateAllowed(peer:string):boolean{const now=Date.now();const recent=(peerBuckets.get(peer)??[]).filter(t=>now-t<RATE_WINDOW_MS);if(recent.length>=RATE_LIMIT){peerBuckets.set(peer,recent);return false;}recent.push(now);peerBuckets.set(peer,recent);return true;}
 function result(message:SoulMeshMessage,kind:'response'|'error',payload:unknown,status=200){const meshSecretValue=secret();if(meshSecretValue){const signed=signSoulMeshResponse(message,payload,kind,meshSecretValue);return NextResponse.json({...signed.message,nonce:signed.nonce,hmac:signed.hmac},{status});}return NextResponse.json({protocol:'soul-mesh/1',contractVersion:SOUL_MESH_CONTRACT_VERSION,id:crypto.randomUUID(),correlationId:message.correlationId,source:NUCLEUS_ID,target:message.source,kind,capability:message.capability,payload,timestamp:Date.now(),transport:'HTTP',meta:{runtime:'nextjs-ai-chatbot-2000',transport:'HTTP',encoding:'json',version:SOUL_MESH_CONTRACT_VERSION,traceId:message.correlationId}} satisfies SoulMeshMessage,{status});}
