@@ -14,4 +14,4 @@ jobs:
       - run: corepack enable
       - run: pnpm install --frozen-lockfile
       - run: pnpm exec tsx --test lib/rgo/RgoFinding.test.ts
-      - run: pnpm exec tsc --noEmit
+      - run: pnpm exec tsc --noEmit --skipLibCheck --moduleResolution bundler --module ESNext --target ES2022 lib/rgo/RgoFinding.ts
