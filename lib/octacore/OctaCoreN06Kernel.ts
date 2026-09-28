@@ -21,11 +21,11 @@ export async function executeOctaCoreN06(
   if (!capability) throw new Error('OCTACORE_N06_CAPABILITY_REQUIRED');
 
   const declared = (NUCLEUS_06_CAPABILITIES as readonly string[]).includes(capability);
-  const executable = n06Processor.executableCapabilities().includes(capability as never);
   if (!declared) {
     throw new Error(`OCTACORE_N06_CAPABILITY_NOT_DECLARED:${capability}`);
   }
-  if (!executable && capability !== 'support.ai-pilot') {
+  const executable = n06Processor.executableCapabilities().includes(capability as never);
+  if (!executable) {
     throw new Error(`OCTACORE_N06_CAPABILITY_NOT_EXECUTABLE:${capability}`);
   }
 
