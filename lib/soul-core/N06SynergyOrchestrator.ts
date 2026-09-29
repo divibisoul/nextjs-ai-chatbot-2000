@@ -41,11 +41,13 @@ export async function composeN06WithN01(task: string) {
   return { correlationId, steps: results };
 }
 
-export async function n06CognitiveToolChain(prompt: string) {
+export async function n06CognitiveToolChain(prompt: string, toolPayload: unknown) {
+  if (toolPayload === undefined) throw new Error('N06_EXECUTABLE_TOOL_PAYLOAD_REQUIRED');
+
   return executeN06Synergy([
-    { nucleus: 'N02', capability: 'inference.reason', payload: { prompt } },
-    { nucleus: 'N04', capability: 'tool.execute', payload: { instruction: 'Use the best available tool for the previous result.' } },
-    { nucleus: 'N02', capability: 'conversation.summarize', payload: { prompt: 'Synthesize the tool result into a useful answer.' } },
+    { nucleus: 'N05', capability: 'inference.reason', payload: { prompt } },
+    { nucleus: 'N04', capability: 'tool.execute', payload: toolPayload },
+    { nucleus: 'N05', capability: 'inference.summarize', payload: { prompt: 'Synthesize the tool result into a useful answer.' } },
   ]);
 }
 
