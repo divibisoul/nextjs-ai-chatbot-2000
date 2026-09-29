@@ -33,7 +33,7 @@ export async function composeN06WithN01(task: string) {
   results.push({ nucleus: 'N06', capability: 'support.ai-pilot', result: plan });
 
   const handoff = await sendFromN06('N01', 'mesh.delegate', {
-    target: 'N02',
+    target: 'N05',
     capability: 'inference.reason',
     payload: { task, plan, readiness, correlationId },
   });
@@ -41,18 +41,21 @@ export async function composeN06WithN01(task: string) {
   return { correlationId, steps: results };
 }
 
-export async function n06CognitiveToolChain(prompt: string) {
+export async function n06CognitiveToolChain(prompt: string, toolPayload: unknown) {
+  if (toolPayload === undefined) throw new Error('N06_EXECUTABLE_TOOL_PAYLOAD_REQUIRED');
+
   return executeN06Synergy([
-    { nucleus: 'N02', capability: 'inference.reason', payload: { prompt } },
-    { nucleus: 'N04', capability: 'tool.execute', payload: { instruction: 'Use the best available tool for the previous result.' } },
-    { nucleus: 'N02', capability: 'conversation.summarize', payload: { prompt: 'Synthesize the tool result into a useful answer.' } },
+    { nucleus: 'N05', capability: 'inference.reason', payload: { prompt } },
+    { nucleus: 'N04', capability: 'tool.execute', payload: toolPayload },
+    { nucleus: 'N05', capability: 'inference.summarize', payload: { prompt: 'Synthesize the tool result into a useful answer.' } },
   ]);
 }
 
-export async function n06DocumentReasoningChain(prompt: string) {
+export async function n06DocumentReasoningChain(prompt: string, documentPayload: unknown) {
+  if (documentPayload === undefined) throw new Error('N06_EXECUTABLE_DOCUMENT_PAYLOAD_REQUIRED');
   return executeN06Synergy([
-    { nucleus: 'N02', capability: 'inference.reason', payload: { prompt } },
-    { nucleus: 'N04', capability: 'document.create', payload: { instruction: 'Create an artifact from the reasoning result.' } },
-    { nucleus: 'N03', capability: 'audio.summarize', payload: { input: 'Summarize or narrate the resulting artifact.' } },
+    { nucleus: 'N05', capability: 'inference.reason', payload: { prompt } },
+    { nucleus: 'N04', capability: 'document.create', payload: documentPayload },
+    { nucleus: 'N05', capability: 'inference.summarize', payload: { prompt: 'Synthesize the document result into a useful answer.' } },
   ]);
 }
