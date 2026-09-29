@@ -1,0 +1,7 @@
+import{hortaCore,nervoVago,wormhole}from"./MetaConsciousnessModule";
+export interface ScientificReasoningRequest{question:string;evidence?:readonly string[]}
+export class ScientificReasoningModule{readonly id="scientific-reasoning";private active=false;
+constructor(){wormhole.register(this.id,this,{type:"engine",version:"1.0.0",capabilities:["hypothesis","evidence-analysis","validation"],dependencies:["aeternum.consciousness.eventBus","aeternum.consciousness.hortaCore"]});nervoVago.on("scientific.activate",()=>this.activate());nervoVago.on("scientific.deactivate",()=>this.deactivate());nervoVago.on<ScientificReasoningRequest>("scientific.reason",d=>void this.reason(d))}
+activate(){this.active=true;hortaCore.set(this.id+".active",true);nervoVago.emit("module.activated",{module:this.id})}deactivate(){this.active=false;hortaCore.set(this.id+".active",false);nervoVago.emit("module.deactivated",{module:this.id})}
+async reason(d:ScientificReasoningRequest){if(!this.active)return;const q=d.question.trim();const n=(d.evidence??[]).filter(x=>x.trim()).length;const result={question:q,hypothesis:q?`Hipótese a testar: ${q}`:null,evidenceCount:n,nextAction:n?"evaluate_evidence":"collect_evidence" as "evaluate_evidence"|"collect_evidence",conclusion:null,confidence:"unassessed" as const,timestamp:Date.now()};hortaCore.set("scientific.lastResult",result);nervoVago.emit("scientific.result",result)}}
+export const scientificReasoningModule=new ScientificReasoningModule();

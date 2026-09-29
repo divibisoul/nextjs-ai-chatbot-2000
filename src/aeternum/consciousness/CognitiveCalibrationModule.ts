@@ -1,0 +1,8 @@
+import{hortaCore,nervoVago,wormhole}from"./MetaConsciousnessModule";
+export interface CognitiveConfig{temperature:number;creativity:number;depth:number}
+const DEF:CognitiveConfig={temperature:.7,creativity:.5,depth:.8};
+export class CognitiveCalibrationModule{readonly id="cognitive-calibration";private active=false;
+constructor(){wormhole.register(this.id,this,{type:"engine",version:"1.0.0",capabilities:["calibration","tuning","precision-control"],dependencies:["aeternum.consciousness.eventBus","aeternum.consciousness.hortaCore"]});nervoVago.on("calibration.activate",()=>this.activate());nervoVago.on("calibration.deactivate",()=>this.deactivate());nervoVago.on<Partial<CognitiveConfig>>("calibration.calibrate",d=>void this.calibrate(d))}
+activate(){this.active=true;hortaCore.set(this.id+".active",true);if(!hortaCore.has("cognitive.config"))hortaCore.set("cognitive.config",DEF);nervoVago.emit("module.activated",{module:this.id})}deactivate(){this.active=false;hortaCore.set(this.id+".active",false);nervoVago.emit("module.deactivated",{module:this.id})}
+async calibrate(d:Partial<CognitiveConfig>){if(!this.active)return;const c=hortaCore.get<CognitiveConfig>("cognitive.config")??DEF;const next={temperature:d.temperature??c.temperature,creativity:d.creativity??c.creativity,depth:d.depth??c.depth};for(const[k,v]of Object.entries(next)){if(!Number.isFinite(v)||v<0||v>1)throw new Error("COGNITIVE_CALIBRATION_RANGE:"+k)}hortaCore.set("cognitive.config",next);nervoVago.emit("calibration.complete",{config:next,timestamp:Date.now()})}}
+export const cognitiveCalibrationModule=new CognitiveCalibrationModule();
