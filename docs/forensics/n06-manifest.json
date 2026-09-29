@@ -1,0 +1,109 @@
+{
+  "repository": "divibisoul/nextjs-ai-chatbot-2000",
+  "nucleus": "N06",
+  "targets": [
+    {
+      "id": "N06CapabilityEngine",
+      "terms": [
+        "N06CapabilityEngine",
+        "CapabilityEngine",
+        "capability-engine"
+      ],
+      "paths": [
+        "app",
+        "components",
+        "lib",
+        "src",
+        "scripts"
+      ]
+    },
+    {
+      "id": "N06ToolRegistry",
+      "terms": [
+        "N06ToolRegistry",
+        "ToolRegistry",
+        "tool-registry"
+      ],
+      "paths": [
+        "app",
+        "components",
+        "lib",
+        "src",
+        "scripts"
+      ]
+    },
+    {
+      "id": "capabilities",
+      "terms": [
+        "capability",
+        "capabilities",
+        "capabilityRegistry"
+      ],
+      "paths": [
+        "app",
+        "components",
+        "lib",
+        "src",
+        "scripts"
+      ]
+    },
+    {
+      "id": "adapters",
+      "terms": [
+        "adapter",
+        "adapters",
+        "providerAdapter"
+      ],
+      "paths": [
+        "app",
+        "lib",
+        "src",
+        "scripts"
+      ]
+    },
+    {
+      "id": "processors",
+      "terms": [
+        "processor",
+        "processors",
+        "ProcessingNode"
+      ],
+      "paths": [
+        "app",
+        "lib",
+        "src",
+        "scripts"
+      ]
+    },
+    {
+      "id": "runtime",
+      "terms": [
+        "runtime",
+        "execute",
+        "execution",
+        "run"
+      ],
+      "paths": [
+        "app",
+        "lib",
+        "src",
+        "scripts"
+      ]
+    },
+    {
+      "id": "mesh",
+      "terms": [
+        "SoulMesh",
+        "soul-mesh",
+        "HMAC",
+        "heartbeat"
+      ],
+      "paths": [
+        "app",
+        "lib",
+        "src",
+        "scripts"
+      ]
+    }
+  ]
+}

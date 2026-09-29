@@ -1,0 +1,31 @@
+name: N06 Cycle 3 forensic audit
+
+on:
+  push:
+    branches:
+      - "audit/cycle3-n06-forensics-2026-09-28"
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+  pull-requests: read
+jobs:
+  forensic:
+    runs-on: ubuntu-22.04
+    env:
+      FORENSIC_MANIFEST: docs/forensics/n06-manifest.json
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node scripts/forensic-audit-n06.cjs
+      - run: test -s artifacts/forensic-audit-report.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: n06-cycle3-forensic-audit
+          path: artifacts/forensic-audit-report.json
