@@ -68,3 +68,23 @@ test('response HMAC rejects wrong target or correlation', () => {
     false,
   );
 });
+
+test('N06 consumes canonical N07 neural parameters with signed response',async()=>{
+ const old=globalThis.fetch;
+ globalThis.fetch=async(_input,init)=>{
+  const body=JSON.parse(String(init?.body));
+  assert.equal(body.capability,'neural.parameters');
+  assert.deepEqual(body.payload,{values:[]});
+  const response:any={protocol:'soul-mesh/1',contractVersion:'1.1.0',id:'n07-parameters',correlationId:body.correlationId,source:'N07',target:'N06',kind:'response',capability:body.capability,payload:{},timestamp:Date.now(),metadata:{parameters:JSON.stringify({size:8,learning_rate:0.05,optimizer:'adam',regularization:0.000001,gradient_clip:1,heads:1,batch_cache:128,layers:[{activation:'tanh'}]})}};
+  const nonce='response-parameters';
+  const unsigned=JSON.stringify({version:'1.0',contractVersion:'1.1.0',messageId:response.id,source:'N07',target:'N06',timestamp:response.timestamp,nonce,correlationId:response.correlationId,type:'TASK_RESULT',payload:{capability:response.capability,payload:response.payload}});
+  const sig=hmac(unsigned);
+  return new Response(JSON.stringify({...response,nonce,hmac:sig}),{status:200,headers:{'content-type':'application/json','x-soul-mesh-nonce':nonce,'x-soul-mesh-hmac':sig}});
+ };
+ try{
+  const bridge=new N07NeuralBridge('N06',{baseUrl:'https://n07.test',secret});
+  const params=await bridge.parameters('corr-n06-parameters');
+  assert.equal(params.size,8);
+  assert.equal(params.optimizer,'adam');
+ }finally{globalThis.fetch=old;}
+});
