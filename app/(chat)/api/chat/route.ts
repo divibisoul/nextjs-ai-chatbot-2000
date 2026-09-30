@@ -37,7 +37,7 @@ import { ChatSDKError } from '@/lib/errors';
 import type { ChatMessage } from '@/lib/types';
 import type { ChatModel } from '@/lib/ai/models';
 import type { VisibilityType } from '@/components/visibility-selector';
-import { extractMessageText, saraChatEnabled, saraConfigured, saraCycle } from '@/lib/sara/SARAClient';
+import { extractMessageText, saraChatEnabled, saraConfigured, saraCycle, type SaraFederatedContext } from '@/lib/sara/SARAClient';
 
 export const maxDuration = 60;
 
@@ -158,7 +158,15 @@ export async function POST(request: Request) {
       const userText = extractMessageText(message);
       if (userText) {
         try {
-          const sara = await saraCycle(userText, id + ':sara');
+          const saraContextInput: SaraFederatedContext = {
+            session_id: id,
+            client: 'n06',
+            pipeline: {
+              selected_chat_model: selectedChatModel,
+              sara_chat_enabled: true,
+            },
+          };
+          const sara = await saraCycle(userText, id + ':sara', saraContextInput);
           saraContext = [
             'SARA_REGENERATIVE_CONTEXT',
             'cycle_id=' + sara.cycle_id,

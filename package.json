@@ -18,7 +18,7 @@
     "db:up": "drizzle-kit up",
     "test": "export PLAYWRIGHT=True && pnpm exec playwright test",
     "test:nucleus05": "tsx --test lib/soul-core/Nucleus05Processor.test.ts",
-    "test:nucleus06": "tsx --test lib/soul-core/Nucleus06Processor.test.ts && node scripts/n06-authority-check.mjs",
+    "test:nucleus06": "tsx --test lib/soul-core/Nucleus06Processor.test.ts lib/soul-core/N06LearningAffinityRuntime.test.ts && node scripts/n06-authority-check.mjs",
     "test:mesh-tools": "tsx --test lib/soul-mesh/N06MeshToolContext.test.ts lib/soul-neural/N07Bridge.test.ts",
     "test:sara": "tsx --test lib/sara/SARAClient.test.ts",
     "build:web": "next build"
@@ -123,18 +123,35 @@
       "sharp": "0.35.4",
       "js-yaml": "4.3.2",
       "nanoid@3.3.9": "3.3.19",
-      "brace-expansion": "1.1.18",
+      "brace-expansion": "1.1.21",
       "playwright": "1.63.0",
       "glob": "10.5.0",
       "minimatch@9": "9.0.7",
       "minimatch@3": "3.1.4",
       "flatted": "3.4.4",
-      "undici": "6.27.0",
+      "undici": "6.28.1",
       "picomatch@2": "2.3.2",
       "picomatch@4": "4.0.4",
       "linkify-it": "5.0.2",
       "ws": "8.21.0",
       "postcss": "8.5.28"
     }
+  },
+  "overrides": {
+    "sharp": "0.35.4",
+    "js-yaml": "4.3.2",
+    "nanoid@3.3.9": "3.3.19",
+    "brace-expansion": "1.1.21",
+    "playwright": "1.63.0",
+    "glob": "10.5.0",
+    "minimatch@9": "9.0.7",
+    "minimatch@3": "3.1.4",
+    "flatted": "3.4.4",
+    "undici": "6.28.1",
+    "picomatch@2": "2.3.2",
+    "picomatch@4": "4.0.4",
+    "linkify-it": "5.0.2",
+    "ws": "8.21.0",
+    "postcss": "8.5.28"
   }
 }

@@ -1,3 +1,13 @@
+export type SaraFederatedContext = {
+  session_id?: string;
+  client?: string;
+  research_snippets?: string[];
+  user_feedback_refs?: string[];
+  pipeline?: Record<string, unknown>;
+  probabilistic?: Record<string, unknown>;
+  scenarios?: Array<{ name: string; note: string }>;
+} & Record<string, unknown>;
+
 import type { ChatMessage } from '@/lib/types';
 
 const BASE_URL = () => (process.env.SARA_BASE_URL ?? '').trim().replace(/\/$/, '');
@@ -20,10 +30,23 @@ export function extractMessageText(message: ChatMessage): string {
     .trim();
 }
 
-export async function saraCycle(input: string, cycleId?: string) {
+export function buildSaraCycleBody(
+  input: string,
+  cycleId?: string,
+  context?: SaraFederatedContext,
+): Record<string, unknown> {
+  return {
+    input,
+    cycle_id: cycleId?.trim(),
+    ...(context ? { context: { ...context, client: context.client ?? 'n06' } } : {}),
+  };
+}
+
+export async function saraCycle(input: string, cycleId?: string, context?: SaraFederatedContext) {
   if (!saraConfigured()) throw new Error('SARA_NOT_CONFIGURED');
   if (!input.trim()) throw new Error('SARA_INPUT_REQUIRED');
 
+  const resolvedCorrelationId = cycleId?.trim() || crypto.randomUUID();
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 30_000);
   try {
@@ -33,9 +56,9 @@ export async function saraCycle(input: string, cycleId?: string) {
         authorization: 'Bearer ' + TOKEN(),
         'content-type': 'application/json',
         accept: 'application/json',
-        ...(cycleId ? { 'X-Correlation-ID': cycleId } : {}),
+        'X-Correlation-ID': resolvedCorrelationId,
       },
-      body: JSON.stringify({ input, cycle_id: cycleId }),
+      body: JSON.stringify(buildSaraCycleBody(input, resolvedCorrelationId, context)),
       signal: controller.signal,
       cache: 'no-store',
     });
@@ -101,22 +124,38 @@ export async function saraHealth(): Promise<Record<string, unknown>> {
   return saraAuxRequest('/health', { auth: false });
 }
 
-export async function saraCapabilities(): Promise<Record<string, unknown>> {
-  return saraAuxRequest('/v1/capabilities');
+export async function saraCapabilities(correlationId?: string): Promise<Record<string, unknown>> {
+  return saraAuxRequest('/v1/capabilities', { correlationId });
 }
 
 export async function saraState(): Promise<Record<string, unknown>> {
   return saraAuxRequest('/v1/state');
 }
 
-export async function saraAudit(input: string, correlationId?: string): Promise<Record<string, unknown>> {
+export async function saraAudit(
+  input: string,
+  correlationId?: string,
+  context?: SaraFederatedContext,
+): Promise<Record<string, unknown>> {
   if (!input.trim()) throw new Error('SARA_INPUT_REQUIRED');
-  return saraAuxRequest('/v1/audit', { method: 'POST', body: { input }, correlationId });
+  return saraAuxRequest('/v1/audit', {
+    method: 'POST',
+    body: { input, ...(context ? { context: { ...context, client: context.client ?? 'n06' } } : {}) },
+    correlationId,
+  });
 }
 
-export async function saraRegenerate(input: string, correlationId?: string): Promise<Record<string, unknown>> {
+export async function saraRegenerate(
+  input: string,
+  correlationId?: string,
+  context?: SaraFederatedContext,
+): Promise<Record<string, unknown>> {
   if (!input.trim()) throw new Error('SARA_INPUT_REQUIRED');
-  return saraAuxRequest('/v1/regenerate', { method: 'POST', body: { input }, correlationId });
+  return saraAuxRequest('/v1/regenerate', {
+    method: 'POST',
+    body: { input, ...(context ? { context: { ...context, client: context.client ?? 'n06' } } : {}) },
+    correlationId,
+  });
 }
 
 
