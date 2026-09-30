@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { createHmac } from 'node:crypto';
 import {
   createSoulMeshNonce,
   signSoulMeshMessage,
@@ -8,8 +9,11 @@ import {
   verifySoulMeshResponse,
 } from './SoulMeshHmac';
 import type { SoulMeshMessage } from './SoulMeshProtocol';
+import { N07NeuralBridge } from '../soul-neural/N07NeuralBridge';
 
 const secret = '0123456789abcdef0123456789abcdef';
+
+const hmac=(data:string)=>createHmac('sha256',secret).update(data,'utf8').digest('hex');
 
 function request(): SoulMeshMessage {
   return {
