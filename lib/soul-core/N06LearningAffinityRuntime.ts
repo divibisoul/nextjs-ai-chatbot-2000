@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { sendFromN06, type N06Peer } from '../soul-mesh/N06PeerAdapter';
+import { saraCapabilities } from '../sara/SARAClient';
 
 export type N06ObservedLearningPrimitive =
   | 'neural.learn'
@@ -14,7 +15,7 @@ export type N06LearningAffinityInput = {
 };
 
 export type N06LearningAffinityStep = {
-  nucleus: N06Peer;
+  nucleus: N06Peer | 'SARA';
   capability: N06ObservedLearningPrimitive;
   status: 'executed' | 'blocked' | 'skipped';
   result?: unknown;
@@ -59,18 +60,12 @@ export async function executeN06LearningAffinity(
   }
 
   try {
-    const saraCapabilities = await sendFromN06(
-      'N07',
-      'sara.capabilities',
-      { correlationId, purpose: 'learning-affinity-discovery' },
-      15000,
-      correlationId,
-    );
+    const saraCapabilitiesResult = await saraCapabilities();
     steps.push({
       nucleus: 'N07',
       capability: 'sara.capabilities',
       status: 'executed',
-      result: saraCapabilities,
+      result: saraCapabilitiesResult,
     });
   } catch (error) {
     steps.push({
