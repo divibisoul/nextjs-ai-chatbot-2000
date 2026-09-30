@@ -1,0 +1,28 @@
+name: Soul Mesh Fusion CI
+on:
+  push:
+    branches: [ main, 'upgrade/**' ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+jobs:
+  verify-n06-fusion:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.12.3
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Typecheck Mesh configuration
+        run: pnpm exec tsc -p tsconfig.mesh.json --noEmit
+      - name: Test N06 processor
+        run: pnpm run test:nucleus05
+      - name: Test N01-N06 fusion contract
+        run: pnpm exec tsx --test lib/soul-mesh/N01N06FusionContract.test.ts
+      - name: Test N06 peer transport
+        run: pnpm exec tsx --test lib/soul-mesh/N06PeerClient.test.ts
