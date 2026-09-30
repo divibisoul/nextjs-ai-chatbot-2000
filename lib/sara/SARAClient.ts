@@ -30,6 +30,18 @@ export function extractMessageText(message: ChatMessage): string {
     .trim();
 }
 
+export function buildSaraCycleBody(
+  input: string,
+  cycleId?: string,
+  context?: SaraFederatedContext,
+): Record<string, unknown> {
+  return {
+    input,
+    cycle_id: cycleId?.trim(),
+    ...(context ? { context: { ...context, client: context.client ?? 'n06' } } : {}),
+  };
+}
+
 export async function saraCycle(input: string, cycleId?: string, context?: SaraFederatedContext) {
   if (!saraConfigured()) throw new Error('SARA_NOT_CONFIGURED');
   if (!input.trim()) throw new Error('SARA_INPUT_REQUIRED');
@@ -45,11 +57,7 @@ export async function saraCycle(input: string, cycleId?: string, context?: SaraF
         accept: 'application/json',
         'X-Correlation-ID': cycleId?.trim() || crypto.randomUUID(),
       },
-      body: JSON.stringify({
-        input,
-        cycle_id: cycleId?.trim(),
-        ...(context ? { context: { ...context, client: context.client ?? 'n06' } } : {}),
-      }),
+      body: JSON.stringify(buildSaraCycleBody(input, cycleId, context)),
       signal: controller.signal,
       cache: 'no-store',
     });
