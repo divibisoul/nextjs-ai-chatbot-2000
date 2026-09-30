@@ -101,8 +101,8 @@ export async function saraHealth(): Promise<Record<string, unknown>> {
   return saraAuxRequest('/health', { auth: false });
 }
 
-export async function saraCapabilities(): Promise<Record<string, unknown>> {
-  return saraAuxRequest('/v1/capabilities');
+export async function saraCapabilities(correlationId?: string): Promise<Record<string, unknown>> {
+  return saraAuxRequest('/v1/capabilities', { correlationId });
 }
 
 export async function saraState(): Promise<Record<string, unknown>> {
