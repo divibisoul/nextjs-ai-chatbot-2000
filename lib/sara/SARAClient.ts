@@ -46,6 +46,7 @@ export async function saraCycle(input: string, cycleId?: string, context?: SaraF
   if (!saraConfigured()) throw new Error('SARA_NOT_CONFIGURED');
   if (!input.trim()) throw new Error('SARA_INPUT_REQUIRED');
 
+  const resolvedCorrelationId = cycleId?.trim() || crypto.randomUUID();
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 30_000);
   try {
@@ -55,9 +56,9 @@ export async function saraCycle(input: string, cycleId?: string, context?: SaraF
         authorization: 'Bearer ' + TOKEN(),
         'content-type': 'application/json',
         accept: 'application/json',
-        'X-Correlation-ID': cycleId?.trim() || crypto.randomUUID(),
+        'X-Correlation-ID': resolvedCorrelationId,
       },
-      body: JSON.stringify(buildSaraCycleBody(input, cycleId, context)),
+      body: JSON.stringify(buildSaraCycleBody(input, resolvedCorrelationId, context)),
       signal: controller.signal,
       cache: 'no-store',
     });
