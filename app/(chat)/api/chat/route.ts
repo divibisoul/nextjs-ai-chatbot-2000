@@ -37,7 +37,7 @@ import { ChatSDKError } from '@/lib/errors';
 import type { ChatMessage } from '@/lib/types';
 import type { ChatModel } from '@/lib/ai/models';
 import type { VisibilityType } from '@/components/visibility-selector';
-import { extractMessageText, saraChatEnabled, saraConfigured, saraCycle } from '@/lib/sara/SARAClient';
+import { extractMessageText, saraChatEnabled, saraConfigured, saraCycle, type SaraFederatedContext } from '@/lib/sara/SARAClient';
 
 export const maxDuration = 60;
 
