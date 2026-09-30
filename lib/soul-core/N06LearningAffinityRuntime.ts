@@ -35,6 +35,17 @@ export type N06LearningAffinityResult = {
  * N06 remains the composition layer. N07 owns neural execution; SARA owns its
  * governance/capability surface. This function never reimplements either.
  */
+export function validateLearningVectors(input?: number[], target?: number[]): void {
+  const hasInput = Array.isArray(input) && input.length > 0;
+  const hasTarget = Array.isArray(target) && target.length > 0;
+  if (hasInput !== hasTarget) {
+    throw new Error('N06_LEARNING_AFFINITY_INPUT_TARGET_MUST_BE_PAIRED');
+  }
+  if (hasInput && input!.length !== target!.length) {
+    throw new Error('N06_LEARNING_AFFINITY_DIMENSION_MISMATCH');
+  }
+}
+
 export async function executeN06LearningAffinity(
   request: N06LearningAffinityInput = {},
 ): Promise<N06LearningAffinityResult> {
@@ -78,15 +89,9 @@ export async function executeN06LearningAffinity(
 
   const hasInput = Array.isArray(request.input) && request.input.length > 0;
   const hasTarget = Array.isArray(request.target) && request.target.length > 0;
-
-  if (hasInput !== hasTarget) {
-    throw new Error('N06_LEARNING_AFFINITY_INPUT_TARGET_MUST_BE_PAIRED');
-  }
+  validateLearningVectors(request.input, request.target);
 
   if (hasInput && hasTarget) {
-    if (request.input!.length !== request.target!.length) {
-      throw new Error('N06_LEARNING_AFFINITY_DIMENSION_MISMATCH');
-    }
 
     try {
       const result = await sendFromN06(
