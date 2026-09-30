@@ -60,7 +60,7 @@ export async function executeN06LearningAffinity(
   }
 
   try {
-    const saraCapabilitiesResult = await saraCapabilities();
+    const saraCapabilitiesResult = await saraCapabilities(correlationId);
     steps.push({
       nucleus: 'N07',
       capability: 'sara.capabilities',
