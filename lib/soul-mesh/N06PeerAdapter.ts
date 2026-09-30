@@ -13,7 +13,7 @@ function timeout(ms:number){return Math.min(MAX_TIMEOUT,Math.max(1000,Math.floor
 function meshSecret(){return (process.env.SOUL_MESH_HMAC_SECRET??process.env.SOUL_MESH_SECRET??'').trim();}
 export function getN06Peers(){return ACTIVE_PEERS.map(id=>({id,url:process.env[ENV[id]]?.trim().replace(/\/$/,'')??''}));}
 export function getN06StructuralPeers(){return STRUCTURAL_PEERS.map(id=>({id,url:process.env[ENV[id]]?.trim().replace(/\/$/,'')??''}));}
-export function createN06Request(target:N06Peer,capability:string,payload:unknown,correlationId=crypto.randomUUID(),traceId=correlationId):SoulMeshMessage{return createSoulMeshMessage({source:'N06',target,kind:'request',capability,payload,correlationId,transport:'HTTP',meta:{runtime:'nextjs-ai-chatbot-2000',transport:'HTTP',encoding:'json',version:'1.1.0',traceId}});}
+export function createN06Request(target:N06Peer,capability:string,payload:unknown,correlationId:string=crypto.randomUUID(),traceId:string=correlationId):SoulMeshMessage{return createSoulMeshMessage({source:'N06',target,kind:'request',capability,payload,correlationId,transport:'HTTP',meta:{runtime:'nextjs-ai-chatbot-2000',transport:'HTTP',encoding:'json',version:'1.1.0',traceId}});}
 export async function sendFromN06(target:N06Peer,capability:string,payload:unknown,timeoutMs=DEFAULT_TIMEOUT,correlationId:string=crypto.randomUUID(),traceId:string=correlationId):Promise<unknown>{
  const peer=getN06Peers().find(p=>p.id===target);if(!peer?.url)throw new Error(`N06_PEER_NOT_CONFIGURED:${target}`);if(!capability.trim())throw new Error('N06_CAPABILITY_REQUIRED');
  const message=createN06Request(target,capability,payload,correlationId,traceId);let last:unknown;
