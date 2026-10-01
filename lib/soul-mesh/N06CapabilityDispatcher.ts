@@ -4,7 +4,7 @@ import { createNucleus06Tools, NUCLEUS_06_TOOL_IDS, type Nucleus06ToolContext } 
 import { authorizeN06Capability } from '@/lib/soul-core/N06ExecutionPolicy';
 import { createMeshToolSession, meshDataStream } from './N06MeshToolContext';
 import type { Nucleus06Capability } from '@/lib/soul-core/Nucleus06Capabilities';
-import { getN06ExternalCapabilityCandidates } from '@/lib/soul-core/N06ExternalCapabilitySources';
+import { getN06ExternalCapabilityCandidates, canonicalN02CapabilityForExternalSource } from '@/lib/soul-core/N06ExternalCapabilitySources';
 import { delegateN06ExternalCapability } from './N06ExternalCapabilityBridge';
 
 export type N06MeshExecutionContext = Partial<Nucleus06ToolContext> & { metadata?: Record<string, unknown> };
@@ -35,6 +35,16 @@ function withMeshToolContext(payload: unknown, context?: N06MeshExecutionContext
   const correlationId = typeof context?.metadata?.correlationId === 'string' ? context.metadata.correlationId : '';
   if (!userId) throw new Error('N06_MESH_USER_ID_REQUIRED');
   return {...context,session:createMeshToolSession({userId,source,correlationId}),dataStream:meshDataStream};
+}
+
+export async function executeN06ExternalCandidate(sourceId: string, payload: unknown, context?: N06MeshExecutionContext) {
+  const capability = canonicalN02CapabilityForExternalSource(sourceId);
+  if (!capability) throw new Error('N06_EXTERNAL_SOURCE_NOT_ACTIVATED:' + sourceId);
+  return executeN06Capability('external-capability-execution', {
+    capability,
+    payload,
+    sourceId,
+  }, context);
 }
 
 export async function executeN06Capability(capability: string, payload: unknown, context?: N06MeshExecutionContext) {
