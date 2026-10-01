@@ -4,9 +4,16 @@ import { createNucleus06Tools, NUCLEUS_06_TOOL_IDS, type Nucleus06ToolContext } 
 import { authorizeN06Capability } from '@/lib/soul-core/N06ExecutionPolicy';
 import { createMeshToolSession, meshDataStream } from './N06MeshToolContext';
 import type { Nucleus06Capability } from '@/lib/soul-core/Nucleus06Capabilities';
+import { getN06ExternalCapabilityCandidates } from '@/lib/soul-core/N06ExternalCapabilitySources';
 
 export type N06MeshExecutionContext = Partial<Nucleus06ToolContext> & { metadata?: Record<string, unknown> };
 export function getN06Capabilities(): readonly string[] { return [...NUCLEUS_06_TOOL_IDS.map(id => `tool:${id}`), ...n06Processor.executableCapabilities()]; }
+
+/**
+ * Discovery-only catalog. Candidates returned here are NOT executable capabilities.
+ * Execution remains exclusively owned by N06Processor/native handlers.
+ */
+export { getN06ExternalCapabilityCandidates };
 
 const CONTEXTUAL_CAPABILITIES = new Set([
   ...NUCLEUS_06_TOOL_IDS.map(id => `tool:${id}`),
