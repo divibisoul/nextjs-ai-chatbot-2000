@@ -8,7 +8,6 @@ import { requestSuggestions } from '@/lib/ai/tools/request-suggestions';
 import { createNucleus06Tools, type Nucleus06ToolContext } from './Nucleus05ToolRegistry';
 import type { N06Context } from './N06Processor';
 import { n06Processor } from './N06Processor';
-import { delegateN06ExternalCapability } from '@/lib/soul-mesh/N06ExternalCapabilityBridge';
 
 type LocalToolExecutionOptions = { toolCallId: string; messages: unknown[] };
 type ExecutableTool = { execute?: (input: unknown, options: LocalToolExecutionOptions) => unknown | Promise<unknown> };
