@@ -5,6 +5,7 @@ import { authorizeN06Capability } from '@/lib/soul-core/N06ExecutionPolicy';
 import { createMeshToolSession, meshDataStream } from './N06MeshToolContext';
 import type { Nucleus06Capability } from '@/lib/soul-core/Nucleus06Capabilities';
 import { getN06ExternalCapabilityCandidates } from '@/lib/soul-core/N06ExternalCapabilitySources';
+import { delegateN06ExternalCapability } from './N06ExternalCapabilityBridge';
 
 export type N06MeshExecutionContext = Partial<Nucleus06ToolContext> & { metadata?: Record<string, unknown> };
 export function getN06Capabilities(): readonly string[] { return [...NUCLEUS_06_TOOL_IDS.map(id => `tool:${id}`), ...n06Processor.executableCapabilities()]; }
@@ -37,6 +38,18 @@ function withMeshToolContext(payload: unknown, context?: N06MeshExecutionContext
 }
 
 export async function executeN06Capability(capability: string, payload: unknown, context?: N06MeshExecutionContext) {
+  if (capability === 'external-capability-execution') {
+    const value = payload && typeof payload === 'object' ? payload as Record<string, unknown> : {};
+    return delegateN06ExternalCapability({
+      capability: String(value.capability ?? ''),
+      payload: value.payload,
+      correlationId: String(context?.metadata?.correlationId ?? crypto.randomUUID()),
+      traceId: typeof context?.metadata?.traceId === 'string' ? context.metadata.traceId : undefined,
+      workloads: Array.isArray(value.workloads) ? value.workloads : [],
+      candidate: value.candidate && typeof value.candidate === 'object' ? value.candidate as Record<string, unknown> : { capability: String(value.capability ?? '') },
+      strategy: typeof value.strategy === 'string' ? value.strategy : undefined,
+    });
+  }
   if (!authorizeN06Capability(capability)) throw new Error(`N06_CAPABILITY_DENIED:${capability}`);
   const effectiveContext = requiresN06MeshUserContext(capability) ? withMeshToolContext(payload, context) : context;
   if (capability.startsWith('tool:')) {
