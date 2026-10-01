@@ -31,6 +31,7 @@ export type ExternalIntegrationStrategy =
 
 export interface ExternalCapabilitySource {
   readonly id: string;
+  readonly canonicalN02Capability?: string;
   readonly sourceRepository: string;
   readonly sourcePath?: string;
   readonly capabilityClass: ExternalCapabilityClass;
@@ -40,6 +41,19 @@ export interface ExternalCapabilitySource {
   readonly licenseScope: string;
   readonly status: 'candidate';
 }
+
+
+
+const VERIFIED_EXTERNAL_ACTIVATION_MAP: Readonly<Record<string, string>> = {
+  'EXT-DEERFLOW-TOOL-SEARCH': 'skill_acquisition',
+  'EXT-DEERFLOW-MCP': 'uci',
+  'EXT-SUPERAGI-TOOLKITS': 'uci',
+  'EXT-SUPERAGI-WORKFLOWS': 'strategic_planning',
+  'EXT-SUPERPOWERS-SKILLS': 'skill_acquisition',
+  'EXT-ECC-SKILLS': 'skill_acquisition',
+  'EXT-GRAPH4NLP': 'eus',
+  'EXT-TENSORFLOW': 'neural_forge',
+};
 
 export const N06_EXTERNAL_CAPABILITY_SOURCES: readonly ExternalCapabilitySource[] = [
   {
@@ -326,4 +340,9 @@ export function getN06ExternalCapabilityCandidates(
       .toLowerCase()
       .includes(needle),
   );
+}
+
+
+export function canonicalN02CapabilityForExternalSource(sourceId: string): string | undefined {
+  return VERIFIED_EXTERNAL_ACTIVATION_MAP[sourceId.trim()];
 }

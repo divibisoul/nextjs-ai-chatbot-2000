@@ -22,7 +22,7 @@ export class N06PeerMeshBridge {
   }
   configuredPeers(){ return [...this.peers.keys()]; }
 
-  async request(peer:Exclude<NucleusId,'N06'>,capability:string,payload:unknown,correlationId=randomUUID(),traceId=randomUUID()){
+  async request(peer:Exclude<NucleusId,'N06'>,capability:string,payload:unknown,correlationId:string=randomUUID(),traceId:string=randomUUID()){
     const state=this.peers.get(peer);
     if (!state) throw new Error(`PEER_NOT_CONFIGURED:${peer}`);
     if (state.openedUntil>Date.now()) throw new Error(`PEER_CIRCUIT_OPEN:${peer}`);
