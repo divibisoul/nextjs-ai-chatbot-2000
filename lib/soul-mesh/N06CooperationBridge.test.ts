@@ -4,6 +4,7 @@ import {
   requestN07CooperationExchange,
   requestN07CooperationHandshake,
 } from './N06CooperationBridge';
+import { signSoulMeshResponse } from './SoulMeshHmac';
 
 const originalFetch = globalThis.fetch;
 
@@ -15,27 +16,24 @@ test.afterEach(() => {
 });
 
 function installFakeN07Fetch() {
+  const secret = '0123456789abcdef0123456789abcdef';
   process.env.SOUL_MESH_N07_URL = 'http://n07.test';
-  delete process.env.SOUL_MESH_HMAC_SECRET;
-  delete process.env.SOUL_MESH_SECRET;
+  process.env.SOUL_MESH_HMAC_SECRET = secret;
+  process.env.SOUL_MESH_SECRET = secret;
   let lastBody: any;
   globalThis.fetch = async (_input: any, init?: any) => {
     lastBody = JSON.parse(String(init?.body ?? '{}'));
+    const requestMessage = lastBody;
+    const signed = signSoulMeshResponse(
+      requestMessage,
+      { status: 'ready', accepted: true },
+      'response',
+      secret,
+    );
     return {
       ok: true,
       async json() {
-        return {
-          protocol: 'soul-mesh/1',
-          contractVersion: '1.1.0',
-          id: 'n07-response-1',
-          correlationId: lastBody.correlationId,
-          source: 'N07',
-          target: 'N06',
-          kind: 'response',
-          capability: lastBody.capability,
-          payload: { status: 'ready', accepted: true },
-          timestamp: Date.now(),
-        };
+        return { ...signed.message, nonce: signed.nonce, hmac: signed.hmac };
       },
     } as any;
   };
