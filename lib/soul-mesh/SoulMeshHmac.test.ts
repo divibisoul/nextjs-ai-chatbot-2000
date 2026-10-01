@@ -43,7 +43,10 @@ test('request HMAC signs and verifies with contractVersion included', () => {
   const signature = signSoulMeshMessage(message, secret, nonce);
   assert.equal(verifySoulMeshMessage({ ...message, nonce, hmac: signature }, secret, nonce, signature), true);
   assert.equal(
-    verifySoulMeshMessage({ ...message, nonce, hmac: signature.slice(0, -1) + (signature.endsWith('0') ? '1' : '0') }, secret, nonce, signature),
+    (() => {
+    const tampered = signature.slice(0, -1) + (signature.endsWith('0') ? '1' : '0');
+    return verifySoulMeshMessage(message, secret, nonce, tampered);
+  })(),
     false,
   );
 });
