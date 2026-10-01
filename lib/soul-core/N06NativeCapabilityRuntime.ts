@@ -36,19 +36,6 @@ async function executePilot(input: unknown, context?: N06Context) {
 }
 export function activateN06NativeCapabilities() {
   n06Processor
-    .registerHandler('external-capability-execution', async (input) => {
-      if (!input || typeof input !== 'object' || Array.isArray(input)) throw new Error('N06_EXTERNAL_CAPABILITY_PAYLOAD_REQUIRED');
-      const value = input as Record<string, unknown>;
-      return delegateN06ExternalCapability({
-        capability: String(value.capability ?? ''),
-        payload: value.payload,
-        correlationId: String(value.correlationId ?? crypto.randomUUID()),
-        traceId: typeof value.traceId === 'string' ? value.traceId : undefined,
-        workloads: Array.isArray(value.workloads) ? value.workloads : [],
-        candidate: value.candidate && typeof value.candidate === 'object' ? value.candidate as Record<string, unknown> : { capability: String(value.capability ?? '') },
-        strategy: typeof value.strategy === 'string' ? value.strategy : undefined,
-      });
-    })
     .registerHandler('support.ai-pilot', executePilot)
     .registerHandler('support.tool-execution', executeNativeTool)
     .registerHandler('support.artifacts', async (input, context) => { const value = objectInput(input); const toolContext = requireToolContext(context); if (value.action === 'update') return executeTool(updateDocument(toolContext) as ExecutableTool, { id: String(value.id ?? ''), description: String(value.description ?? '') }); return executeTool(createDocument(toolContext) as ExecutableTool, { title: String(value.title ?? 'Untitled'), kind: value.kind }); })
