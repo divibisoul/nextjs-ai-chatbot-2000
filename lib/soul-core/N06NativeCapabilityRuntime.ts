@@ -47,8 +47,8 @@ export function activateN06NativeCapabilities() {
         workloads: Array.isArray(value.workloads) ? value.workloads : [],
         candidate: value.candidate && typeof value.candidate === 'object' ? value.candidate as Record<string, unknown> : { capability: String(value.capability ?? '') },
         strategy: typeof value.strategy === 'string' ? value.strategy : undefined,
-      })
-    
+      });
+    })
     .registerHandler('support.ai-pilot', executePilot)
     .registerHandler('support.tool-execution', executeNativeTool)
     .registerHandler('support.artifacts', async (input, context) => { const value = objectInput(input); const toolContext = requireToolContext(context); if (value.action === 'update') return executeTool(updateDocument(toolContext) as ExecutableTool, { id: String(value.id ?? ''), description: String(value.description ?? '') }); return executeTool(createDocument(toolContext) as ExecutableTool, { title: String(value.title ?? 'Untitled'), kind: value.kind }); })
