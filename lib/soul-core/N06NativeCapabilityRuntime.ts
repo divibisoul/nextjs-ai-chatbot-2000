@@ -8,6 +8,7 @@ import { requestSuggestions } from '@/lib/ai/tools/request-suggestions';
 import { createNucleus06Tools, type Nucleus06ToolContext } from './Nucleus05ToolRegistry';
 import type { N06Context } from './N06Processor';
 import { n06Processor } from './N06Processor';
+import { executeSuperAGICapability } from './N06SuperAGIBridge';
 
 type LocalToolExecutionOptions = { toolCallId: string; messages: unknown[] };
 type ExecutableTool = { execute?: (input: unknown, options: LocalToolExecutionOptions) => unknown | Promise<unknown> };
@@ -33,6 +34,13 @@ async function executePilot(input: unknown, context?: N06Context) {
   const result = await generateText({ model: myProvider.languageModel(modelId), system: typeof value.system === 'string' ? value.system : undefined, prompt });
   return { nucleus: 'N06', model: modelId, text: result.text, usage: result.usage, metadata: context?.metadata ?? {} };
 }
+async function executeSuperAGI(input: unknown, context?: N06Context) {
+  const value = objectInput(input);
+  const capability = typeof value.capability === 'string' ? value.capability.trim() : '';
+  if (!capability) throw new Error('SUPERAGI_CAPABILITY_REQUIRED');
+  const correlationId = typeof context?.metadata?.correlationId === 'string' ? context.metadata.correlationId : '';
+  return executeSuperAGICapability(capability, value.input ?? value.payload ?? value, correlationId, fetch, context);
+}
 export function activateN06NativeCapabilities() {
   n06Processor
     .registerHandler('support.ai-pilot', executePilot)
@@ -41,7 +49,7 @@ export function activateN06NativeCapabilities() {
     .registerHandler('support.documents', async (input, context) => { const value = objectInput(input); const toolContext = requireToolContext(context); if (value.action === 'update') return executeTool(updateDocument(toolContext) as ExecutableTool, { id: String(value.id ?? ''), description: String(value.description ?? '') }); return executeTool(createDocument(toolContext) as ExecutableTool, { title: String(value.title ?? 'Untitled'), kind: value.kind }); })
     .registerHandler('support.context', async (input, context) => ({ input, metadata: context?.metadata ?? {}, nucleus: 'N06' }))
     .registerHandler('support.streaming', async (input, context) => { if (context?.dataStream && typeof (context.dataStream as { write?: unknown }).write === 'function') (context.dataStream as { write: (value: unknown) => void }).write({ type: 'data-kind', data: 'n06-stream', transient: true }); return input; })
-    .registerHandler('support.mesh', async (input) => ({ accepted: true, protocol: 'soul-mesh/1', nucleus: 'N06', payload: input }));
+    .registerHandler('support.mesh', async (input) => ({ accepted: true, protocol: 'soul-mesh/1', nucleus: 'N06', payload: input })).registerHandler('superagi.agent.create', async (input, context) => executeSuperAGI({ capability: 'superagi.agent.create', input }, context)).registerHandler('superagi.agent.run', async (input, context) => executeSuperAGI({ capability: 'superagi.agent.run', input }, context)).registerHandler('superagi.agent.run-status', async (input, context) => executeSuperAGI({ capability: 'superagi.agent.run-status', input }, context)).registerHandler('superagi.agent.pause', async (input, context) => executeSuperAGI({ capability: 'superagi.agent.pause', input }, context)).registerHandler('superagi.agent.resume', async (input, context) => executeSuperAGI({ capability: 'superagi.agent.resume', input }, context)).registerHandler('superagi.agent.update', async (input, context) => executeSuperAGI({ capability: 'superagi.agent.update', input }, context));
   return n06Processor;
 }
 activateN06NativeCapabilities();

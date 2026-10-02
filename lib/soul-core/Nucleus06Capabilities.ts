@@ -15,7 +15,13 @@ export type Nucleus06Capability =
   | 'support.tool-execution'
   | 'support.streaming'
   | 'support.mesh'
-  | 'support.ai-pilot';
+  | 'support.ai-pilot'
+  | 'superagi.agent.create'
+  | 'superagi.agent.run'
+  | 'superagi.agent.run-status'
+  | 'superagi.agent.pause'
+  | 'superagi.agent.resume'
+  | 'superagi.agent.update';
 
 export const NUCLEUS_06_CAPABILITIES: readonly Nucleus06Capability[] = [
   'support.context',
@@ -25,6 +31,12 @@ export const NUCLEUS_06_CAPABILITIES: readonly Nucleus06Capability[] = [
   'support.streaming',
   'support.mesh',
   'support.ai-pilot',
+  'superagi.agent.create',
+  'superagi.agent.run',
+  'superagi.agent.run-status',
+  'superagi.agent.pause',
+  'superagi.agent.resume',
+  'superagi.agent.update',
 ] as const;
 
 export const NUCLEUS_06_ROLE: Nucleus06Role = 'support';
