@@ -59,7 +59,12 @@ export async function runSmolAgents(request:SmolAgentsRequest):Promise<Record<st
   const c=config();
   const payload=JSON.stringify({root:c.root,modelId:request.modelId?.trim()||c.modelId,provider:request.provider?.trim()||c.provider,task, maxSteps:Math.min(100,Math.max(1,request.maxSteps??20)),executorType:request.executorType??c.executorType});
   const child=spawn(c.python,[path.resolve('scripts/smolagents_runner.py')],{cwd:process.cwd(),stdio:['pipe','pipe','pipe']});
-  let stdout='',stderr='';child.stdout.setEncoding('utf8');child.stderr.setEncoding('utf8');child.stdout.on('data',x=>stdout+=x);child.stderr.on('data',x=>stderr+=x);
+  let stdout='',stderr='';child.stdout.setEncoding('utf8');child.stderr.setEncoding('utf8');child.stdout.on('data', (chunk) => {
+    stdout += chunk;
+  });
+  child.stderr.on('data', (chunk) => {
+    stderr += chunk;
+  });
   const result=await new Promise<{code:number|null;signal:NodeJS.Signals|null}>((resolve,reject)=>{
     const timer=setTimeout(()=>{child.kill('SIGTERM');reject(new Error('SMOLAGENTS_TIMEOUT'));},c.timeoutMs);
     child.once('error',e=>{clearTimeout(timer);reject(e)});child.once('exit',(code,signal)=>{clearTimeout(timer);resolve({code,signal})});child.stdin.end(payload);
