@@ -1,0 +1,24 @@
+{
+  "schema_version": "1.0.0",
+  "component": {
+    "id": "N06",
+    "role": "cognição, raciocínio e agentes de execução"
+  },
+  "reason": "functional-complementation",
+  "upstream_capability_sources": [
+    "openhands",
+    "metagpt",
+    "smolagents",
+    "dspy"
+  ],
+  "canonical_control_plane": "divibisoul/Orquestrador-",
+  "integration": {
+    "agent_engineering": "superpowers.octacore",
+    "routing": "canonical SOUL Mesh via N07",
+    "execution": "N06 planning/reasoning/tool boundary",
+    "verification": "plan-to-task + tool invocation + reasoning contract",
+    "structural_state": "REAL",
+    "runtime_state": "PROJECTED"
+  },
+  "rule": "upstream source remains independent; adapter/configuration/runtime evidence is required before EXECUTABLE"
+}
