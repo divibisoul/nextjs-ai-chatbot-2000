@@ -48,14 +48,14 @@ export function describeSmolAgentsAdapter():SmolAgentsEvidence{
   if(!enabled())return {state:'DEGRADED',code:'SMOLAGENTS_ADAPTER_DISABLED',provider:'huggingface/smolagents',revision:SMOLAGENTS_REVISION,root:c.root,python:c.python,enabled:false,sourcePresent,modelId:c.modelId,modelProvider:c.provider,tokenPresent,executorType:c.executorType};
   if(!sourcePresent)return {state:'DEGRADED',code:'SMOLAGENTS_SOURCE_NOT_AVAILABLE',provider:'huggingface/smolagents',revision:SMOLAGENTS_REVISION,root:c.root,python:c.python,enabled:true,sourcePresent:false,modelId:c.modelId,modelProvider:c.provider,tokenPresent,executorType:c.executorType};
   if(!tokenPresent)return {state:'DEGRADED',code:'SMOLAGENTS_HF_TOKEN_NOT_AVAILABLE',provider:'huggingface/smolagents',revision:SMOLAGENTS_REVISION,root:c.root,python:c.python,enabled:true,sourcePresent:true,modelId:c.modelId,modelProvider:c.provider,tokenPresent:false,executorType:c.executorType};
-  if(!['docker','e2b','modal','blaxel'].includes(c.executorType))return {state:'FAIL',code:'SMOLAGENTS_EXECUTOR_UNSUPPORTED',provider:'huggingface/smolagents',revision:SMOLAGENTS_REVISION,root:c.root,python:c.python,enabled:true,sourcePresent:true,modelId:c.modelId,modelProvider:c.provider,tokenPresent:true,executorType:c.executorType};
+  if(!['docker','e2b','modal','blaxel'].includes(c.executorType))return {...evidence,state:'FAIL',code:'SMOLAGENTS_EXECUTOR_UNSUPPORTED',provider:'huggingface/smolagents',revision:SMOLAGENTS_REVISION,root:c.root,python:c.python,enabled:true,sourcePresent:true,modelId:c.modelId,modelProvider:c.provider,tokenPresent:true,executorType:c.executorType};
   return {state:'DEGRADED',code:'SMOLAGENTS_EXECUTION_NOT_YET_PROVEN',provider:'huggingface/smolagents',revision:SMOLAGENTS_REVISION,root:c.root,python:c.python,enabled:true,sourcePresent:true,modelId:c.modelId,modelProvider:c.provider,tokenPresent:true,executorType:c.executorType};
 }
 export async function runSmolAgents(request:SmolAgentsRequest):Promise<Record<string,unknown>>{
   const evidence=describeSmolAgentsAdapter();
   if(evidence.state!=='PASS'&&evidence.code!=='SMOLAGENTS_EXECUTION_NOT_YET_PROVEN')return {...evidence,capability:SMOLAGENTS_CAPABILITY};
   const task=request.task.trim();
-  if(!task)return {state:'FAIL',code:'SMOLAGENTS_TASK_REQUIRED',capability:SMOLAGENTS_CAPABILITY,...evidence};
+  if(!task)return {state:'FAIL',code:'SMOLAGENTS_TASK_REQUIRED',capability:SMOLAGENTS_CAPABILITY};
   const c=config();
   const payload=JSON.stringify({root:c.root,modelId:request.modelId?.trim()||c.modelId,provider:request.provider?.trim()||c.provider,task, maxSteps:Math.min(100,Math.max(1,request.maxSteps??20)),executorType:request.executorType??c.executorType});
   const child=spawn(c.python,[path.resolve('scripts/smolagents_runner.py')],{cwd:process.cwd(),stdio:['pipe','pipe','pipe']});
@@ -64,8 +64,8 @@ export async function runSmolAgents(request:SmolAgentsRequest):Promise<Record<st
     const timer=setTimeout(()=>{child.kill('SIGTERM');reject(new Error('SMOLAGENTS_TIMEOUT'));},c.timeoutMs);
     child.once('error',e=>{clearTimeout(timer);reject(e)});child.once('exit',(code,signal)=>{clearTimeout(timer);resolve({code,signal})});child.stdin.end(payload);
   }).catch(error=>({code:null,signal:null,error}));
-  if('error'in result&&result.error){const message=result.error instanceof Error?result.error.message:String(result.error);return {state:message==='SMOLAGENTS_TIMEOUT'?'FAIL':'DEGRADED',code:message==='SMOLAGENTS_TIMEOUT'?'SMOLAGENTS_TIMEOUT':'SMOLAGENTS_PROCESS_UNAVAILABLE',detail:message,stderr:stderr.slice(-4000),capability:SMOLAGENTS_CAPABILITY,...evidence};}
-  if(result.code!==0)return {state:'FAIL',code:'SMOLAGENTS_PROCESS_FAILED',exitCode:result.code,signal:result.signal,stderr:stderr.slice(-4000),capability:SMOLAGENTS_CAPABILITY,...evidence};
+  if('error'in result&&result.error){const message=result.error instanceof Error?result.error.message:String(result.error);return {...evidence,state:message==='SMOLAGENTS_TIMEOUT'?'FAIL':'DEGRADED',code:message==='SMOLAGENTS_TIMEOUT'?'SMOLAGENTS_TIMEOUT':'SMOLAGENTS_PROCESS_UNAVAILABLE',detail:message,stderr:stderr.slice(-4000),capability:SMOLAGENTS_CAPABILITY};}
+  if(result.code!==0)return {...evidence,state:'FAIL',code:'SMOLAGENTS_PROCESS_FAILED',exitCode:result.code,signal:result.signal,stderr:stderr.slice(-4000),capability:SMOLAGENTS_CAPABILITY};
   try{return {...JSON.parse(stdout.trim()),capability:SMOLAGENTS_CAPABILITY,providerRevision:SMOLAGENTS_REVISION};}
-  catch{return {state:'FAIL',code:'SMOLAGENTS_INVALID_RUNNER_OUTPUT',stdout:stdout.slice(-4000),stderr:stderr.slice(-4000),capability:SMOLAGENTS_CAPABILITY,...evidence};}
+  catch{return {...evidence,state:'FAIL',code:'SMOLAGENTS_INVALID_RUNNER_OUTPUT',stdout:stdout.slice(-4000),stderr:stderr.slice(-4000),capability:SMOLAGENTS_CAPABILITY};}
 }
