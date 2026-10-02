@@ -1,0 +1,15 @@
+[submodule "integrations/soul-upstream/openhands"]
+	path = integrations/soul-upstream/openhands
+	url = https://github.com/OpenHands/OpenHands.git
+
+[submodule "integrations/soul-upstream/metagpt"]
+	path = integrations/soul-upstream/metagpt
+	url = https://github.com/FoundationAgents/MetaGPT.git
+
+[submodule "integrations/soul-upstream/smolagents"]
+	path = integrations/soul-upstream/smolagents
+	url = https://github.com/huggingface/smolagents.git
+
+[submodule "integrations/soul-upstream/dspy"]
+	path = integrations/soul-upstream/dspy
+	url = https://github.com/stanfordnlp/dspy.git
