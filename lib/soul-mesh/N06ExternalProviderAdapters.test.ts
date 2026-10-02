@@ -1,4 +1,5 @@
-import { describe, expect, test } from 'bun:test';
+import { describe, test } from 'node:test';
+import assert from 'node:assert/strict';
 import { describeSmolAgentsAdapter } from './SmolAgentsAdapter';
 import { describeDSPyAdapter } from './DSPyAdapter';
 
