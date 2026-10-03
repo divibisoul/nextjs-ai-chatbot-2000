@@ -64,7 +64,9 @@ export async function executeMetaGPTProject(input: unknown, correlationId: strin
   if (!goal) throw new Error('METAGPT_GOAL_REQUIRED');
   const correlation = correlationId.trim();
   if (!correlation) throw new Error('METAGPT_CORRELATION_REQUIRED');
-  const payload = env('N06_METAGPT_URL') ? await remote(value, correlation, fetchImpl) : await local(value, correlation);
+  if (env('N06_METAGPT_URL')) return { nucleus: 'N06', provider: 'FoundationAgents/MetaGPT', upstreamCommit: UPSTREAM_COMMIT, correlationId: correlation, contextMetadata: context?.metadata ?? {}, payload: await remote(value, correlation, fetchImpl) };
+  if (!env('N06_METAGPT_LOCAL_PYTHON')) throw new Error('METAGPT_LOCAL_RUNTIME_NOT_CONFIGURED');
+  const payload = await local(value, correlation);
   if (String(payload.state ?? '') !== 'PASS') throw new Error('METAGPT_RUNTIME_BLOCKED:' + String(payload.code ?? 'UNKNOWN'));
   return { nucleus: 'N06', provider: 'FoundationAgents/MetaGPT', upstreamCommit: UPSTREAM_COMMIT, correlationId: correlation, contextMetadata: context?.metadata ?? {}, payload };
 }
