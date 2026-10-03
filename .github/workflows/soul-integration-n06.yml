@@ -1,7 +1,7 @@
 name: SOUL Integration CI - N06
 on:
   push:
-    branches: [main]
+    branches: [main, feat/n06-metagpt-runtime]
   pull_request:
 permissions:
   contents: read
@@ -21,3 +21,8 @@ jobs:
           if test -f .gitmodules; then
             git config -f .gitmodules --get-regexp '^submodule\..*\.path$' | awk '{print $2}' | while read p; do test -e "$p"; done
           fi
+
+      - name: Validate N06 25-source capability fabric
+        run: |
+          test "$(grep -o '"external_provider_count": 25' integrations/soul-25-augmentation.json | wc -l)" -eq 1
+          npx --yes tsx --test lib/soul-core/N06ExternalCapabilityFabric.test.ts lib/soul-core/N06MetaGPTBridge.test.ts lib/soul-core/N06LettaBridge.test.ts
