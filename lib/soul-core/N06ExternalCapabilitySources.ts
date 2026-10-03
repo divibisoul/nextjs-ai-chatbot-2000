@@ -55,7 +55,19 @@ const VERIFIED_EXTERNAL_ACTIVATION_MAP: Readonly<Record<string, string>> = {
   'EXT-TENSORFLOW': 'neural_forge',
 };
 
-export const N06_EXTERNAL_CAPABILITY_SOURCES: readonly ExternalCapabilitySource[] = [  {
+export const N06_EXTERNAL_CAPABILITY_SOURCES: readonly ExternalCapabilitySource[] = [
+  {
+    id: 'EXT-LETTA-STATEFUL',
+    sourceRepository: 'letta-ai/letta',
+    sourcePath: 'letta',
+    capabilityClass: 'memory',
+    capability: 'stateful-agent messaging, persistent memory and agent state',
+    targetNuclei: ['N06', 'N07', 'SARA'],
+    strategy: 'ADAPTER',
+    licenseScope: 'Apache-2.0',
+    status: 'adapter-bound',
+  },
+  {
     id: 'EXT-METAGPT-TEAM',
     sourceRepository: 'FoundationAgents/MetaGPT',
     sourcePath: 'metagpt/team.py',
