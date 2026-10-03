@@ -11,6 +11,7 @@ import { n06Processor } from './N06Processor';
 import { executeSuperAGICapability } from './N06SuperAGIBridge';
 import { executeMetaGPTProject, metaGPTStatus } from './N06MetaGPTBridge';
 import { executeLettaMessage, executeLettaHistory, executeLettaAgentStatus } from './N06LettaBridge';
+import { describeN06ExternalCapabilityFabric, resolveN06ExternalProvider } from './N06ExternalCapabilityFabric';
 
 type LocalToolExecutionOptions = { toolCallId: string; messages: unknown[] };
 type ExecutableTool = { execute?: (input: unknown, options: LocalToolExecutionOptions) => unknown | Promise<unknown> };
@@ -56,7 +57,14 @@ export function activateN06NativeCapabilities() {
     .registerHandler('metagpt.project.status', async () => metaGPTStatus())
     .registerHandler('letta.agent.message', async (input, context) => executeLettaMessage(input, String(context?.metadata?.correlationId ?? ''), fetch, context))
     .registerHandler('letta.agent.history', async (input, context) => executeLettaHistory(input, String(context?.metadata?.correlationId ?? ''), fetch, context))
-    .registerHandler('letta.agent.status', async (input, context) => executeLettaAgentStatus(input, String(context?.metadata?.correlationId ?? ''), fetch, context));
+    .registerHandler('letta.agent.status', async (input, context) => executeLettaAgentStatus(input, String(context?.metadata?.correlationId ?? ''), fetch, context))
+    .registerHandler('external.capability.fabric.describe@1.0.0', async () => describeN06ExternalCapabilityFabric())
+    .registerHandler('external.capability.resolve@1.0.0', async (input) => {
+      const value = objectInput(input);
+      const provider = String(value.provider ?? '').trim();
+      if (!provider) throw new Error('N06_EXTERNAL_PROVIDER_REQUIRED');
+      return { nucleus: 'N06', provider: resolveN06ExternalProvider(provider) };
+    });
   return n06Processor;
 }
 activateN06NativeCapabilities();
