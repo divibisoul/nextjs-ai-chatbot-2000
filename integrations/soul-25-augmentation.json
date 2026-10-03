@@ -29,7 +29,11 @@
         "workflow.execute"
       ],
       "directAffinity": true,
-      "state": "CATALOG_BOUND"
+      "state": "CATALOG_BOUND",
+      "access": "N06 capability fabric",
+      "structural_state": "REAL",
+      "requires_adapter": true,
+      "runtime_state": "PROJECTED"
     },
     {
       "id": "superagi",
@@ -52,7 +56,11 @@
         "agent.execution"
       ],
       "directAffinity": false,
-      "state": "CATALOG_BOUND"
+      "state": "CATALOG_BOUND",
+      "access": "N06 capability fabric",
+      "structural_state": "REAL",
+      "requires_adapter": true,
+      "runtime_state": "PROJECTED"
     },
     {
       "id": "langgraph",
@@ -74,7 +82,11 @@
         "agent.execution"
       ],
       "directAffinity": true,
-      "state": "CATALOG_BOUND"
+      "state": "CATALOG_BOUND",
+      "access": "N06 capability fabric",
+      "structural_state": "REAL",
+      "requires_adapter": true,
+      "runtime_state": "PROJECTED"
     },
     {
       "id": "crewai",
@@ -95,7 +107,11 @@
         "agent.execution"
       ],
       "directAffinity": true,
-      "state": "CATALOG_BOUND"
+      "state": "CATALOG_BOUND",
+      "access": "N06 capability fabric",
+      "structural_state": "REAL",
+      "requires_adapter": true,
+      "runtime_state": "PROJECTED"
     },
     {
       "id": "microsoft-agent-framework",
@@ -117,7 +133,11 @@
         "agent.execution"
       ],
       "directAffinity": false,
-      "state": "CATALOG_BOUND"
+      "state": "CATALOG_BOUND",
+      "access": "N06 capability fabric",
+      "structural_state": "REAL",
+      "requires_adapter": true,
+      "runtime_state": "PROJECTED"
     },
     {
       "id": "openhands",
@@ -138,7 +158,11 @@
         "agent.learning"
       ],
       "directAffinity": true,
-      "state": "CATALOG_BOUND"
+      "state": "CATALOG_BOUND",
+      "access": "N06 capability fabric",
+      "structural_state": "REAL",
+      "requires_adapter": true,
+      "runtime_state": "PROJECTED"
     },
     {
       "id": "metagpt",
@@ -159,7 +183,11 @@
         "agent.execution"
       ],
       "directAffinity": true,
-      "state": "ADAPTER_BOUND"
+      "state": "ADAPTER_BOUND",
+      "access": "N06 capability fabric",
+      "structural_state": "REAL",
+      "requires_adapter": true,
+      "runtime_state": "ADAPTER_BOUND"
     },
     {
       "id": "agentscope",
@@ -184,7 +212,11 @@
         "agent.execution"
       ],
       "directAffinity": false,
-      "state": "CATALOG_BOUND"
+      "state": "CATALOG_BOUND",
+      "access": "N06 capability fabric",
+      "structural_state": "REAL",
+      "requires_adapter": true,
+      "runtime_state": "PROJECTED"
     },
     {
       "id": "letta-code",
@@ -203,7 +235,11 @@
         "research.reference"
       ],
       "directAffinity": false,
-      "state": "CATALOG_BOUND"
+      "state": "CATALOG_BOUND",
+      "access": "N06 capability fabric",
+      "structural_state": "REAL",
+      "requires_adapter": true,
+      "runtime_state": "PROJECTED"
     },
     {
       "id": "browser-use",
@@ -221,7 +257,11 @@
         "web-agent.execution"
       ],
       "directAffinity": false,
-      "state": "CATALOG_BOUND"
+      "state": "CATALOG_BOUND",
+      "access": "N06 capability fabric",
+      "structural_state": "REAL",
+      "requires_adapter": true,
+      "runtime_state": "PROJECTED"
     },
     {
       "id": "smolagents",
@@ -243,7 +283,11 @@
         "agent.learning"
       ],
       "directAffinity": true,
-      "state": "CATALOG_BOUND"
+      "state": "CATALOG_BOUND",
+      "access": "N06 capability fabric",
+      "structural_state": "REAL",
+      "requires_adapter": true,
+      "runtime_state": "PROJECTED"
     },
     {
       "id": "pydantic-ai",
@@ -265,7 +309,11 @@
         "tool.execution"
       ],
       "directAffinity": true,
-      "state": "CATALOG_BOUND"
+      "state": "CATALOG_BOUND",
+      "access": "N06 capability fabric",
+      "structural_state": "REAL",
+      "requires_adapter": true,
+      "runtime_state": "PROJECTED"
     },
     {
       "id": "llama-index",
@@ -286,7 +334,11 @@
         "context.synthesis"
       ],
       "directAffinity": false,
-      "state": "CATALOG_BOUND"
+      "state": "CATALOG_BOUND",
+      "access": "N06 capability fabric",
+      "structural_state": "REAL",
+      "requires_adapter": true,
+      "runtime_state": "PROJECTED"
     },
     {
       "id": "dspy",
@@ -307,7 +359,11 @@
         "agent.learning"
       ],
       "directAffinity": true,
-      "state": "CATALOG_BOUND"
+      "state": "CATALOG_BOUND",
+      "access": "N06 capability fabric",
+      "structural_state": "REAL",
+      "requires_adapter": true,
+      "runtime_state": "PROJECTED"
     },
     {
       "id": "whisper",
@@ -324,7 +380,11 @@
         "multimodal.execution"
       ],
       "directAffinity": false,
-      "state": "CATALOG_BOUND"
+      "state": "CATALOG_BOUND",
+      "access": "N06 capability fabric",
+      "structural_state": "REAL",
+      "requires_adapter": true,
+      "runtime_state": "PROJECTED"
     },
     {
       "id": "kokoro",
@@ -341,7 +401,11 @@
         "multimodal.execution"
       ],
       "directAffinity": false,
-      "state": "CATALOG_BOUND"
+      "state": "CATALOG_BOUND",
+      "access": "N06 capability fabric",
+      "structural_state": "REAL",
+      "requires_adapter": true,
+      "runtime_state": "PROJECTED"
     },
     {
       "id": "everything-claude-code",
@@ -365,7 +429,11 @@
         "workflow.execute"
       ],
       "directAffinity": true,
-      "state": "CATALOG_BOUND"
+      "state": "CATALOG_BOUND",
+      "access": "N06 capability fabric",
+      "structural_state": "REAL",
+      "requires_adapter": true,
+      "runtime_state": "PROJECTED"
     },
     {
       "id": "swarmclaw",
@@ -388,7 +456,11 @@
         "agent.execution"
       ],
       "directAffinity": true,
-      "state": "CATALOG_BOUND"
+      "state": "CATALOG_BOUND",
+      "access": "N06 capability fabric",
+      "structural_state": "REAL",
+      "requires_adapter": true,
+      "runtime_state": "PROJECTED"
     },
     {
       "id": "mem0",
@@ -408,7 +480,11 @@
         "conversation.memory"
       ],
       "directAffinity": true,
-      "state": "CATALOG_BOUND"
+      "state": "CATALOG_BOUND",
+      "access": "N06 capability fabric",
+      "structural_state": "REAL",
+      "requires_adapter": true,
+      "runtime_state": "PROJECTED"
     },
     {
       "id": "letta",
@@ -431,7 +507,11 @@
         "conversation.memory"
       ],
       "directAffinity": true,
-      "state": "ADAPTER_BOUND"
+      "state": "ADAPTER_BOUND",
+      "access": "N06 capability fabric",
+      "structural_state": "REAL",
+      "requires_adapter": true,
+      "runtime_state": "ADAPTER_BOUND"
     },
     {
       "id": "langfuse",
@@ -452,7 +532,11 @@
         "research.reference"
       ],
       "directAffinity": false,
-      "state": "CATALOG_BOUND"
+      "state": "CATALOG_BOUND",
+      "access": "N06 capability fabric",
+      "structural_state": "REAL",
+      "requires_adapter": true,
+      "runtime_state": "PROJECTED"
     },
     {
       "id": "vllm",
@@ -470,7 +554,11 @@
         "inference.backend"
       ],
       "directAffinity": false,
-      "state": "CATALOG_BOUND"
+      "state": "CATALOG_BOUND",
+      "access": "N06 capability fabric",
+      "structural_state": "REAL",
+      "requires_adapter": true,
+      "runtime_state": "PROJECTED"
     },
     {
       "id": "sglang",
@@ -488,7 +576,11 @@
         "inference.backend"
       ],
       "directAffinity": false,
-      "state": "CATALOG_BOUND"
+      "state": "CATALOG_BOUND",
+      "access": "N06 capability fabric",
+      "structural_state": "REAL",
+      "requires_adapter": true,
+      "runtime_state": "PROJECTED"
     },
     {
       "id": "ray",
@@ -509,7 +601,11 @@
         "model.training"
       ],
       "directAffinity": false,
-      "state": "CATALOG_BOUND"
+      "state": "CATALOG_BOUND",
+      "access": "N06 capability fabric",
+      "structural_state": "REAL",
+      "requires_adapter": true,
+      "runtime_state": "PROJECTED"
     },
     {
       "id": "megatron-lm",
@@ -528,7 +624,11 @@
         "model.training"
       ],
       "directAffinity": false,
-      "state": "CATALOG_BOUND"
+      "state": "CATALOG_BOUND",
+      "access": "N06 capability fabric",
+      "structural_state": "REAL",
+      "requires_adapter": true,
+      "runtime_state": "PROJECTED"
     }
   ],
   "soul_peer_count": 9,
