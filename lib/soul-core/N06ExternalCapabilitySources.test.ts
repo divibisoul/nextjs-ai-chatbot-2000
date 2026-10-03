@@ -12,7 +12,7 @@ test('external capability source catalog is deterministic and unique', () => {
   assert.equal(new Set(ids).size, ids.length);
 
   for (const source of N06_EXTERNAL_CAPABILITY_SOURCES) {
-    assert.equal(source.status, 'candidate');
+    assert.ok(source.status === 'candidate' || source.status === 'adapter-bound');
     assert.ok(source.sourceRepository.trim());
     assert.ok(source.capability.trim());
     assert.ok(source.targetNuclei.length > 0);

@@ -9,6 +9,8 @@ import { createNucleus06Tools, type Nucleus06ToolContext } from './Nucleus05Tool
 import type { N06Context } from './N06Processor';
 import { n06Processor } from './N06Processor';
 import { executeSuperAGICapability } from './N06SuperAGIBridge';
+import { executeMetaGPTProject, metaGPTStatus } from './N06MetaGPTBridge';
+import { executeLettaMessage, executeLettaHistory, executeLettaAgentStatus } from './N06LettaBridge';
 
 type LocalToolExecutionOptions = { toolCallId: string; messages: unknown[] };
 type ExecutableTool = { execute?: (input: unknown, options: LocalToolExecutionOptions) => unknown | Promise<unknown> };
@@ -49,7 +51,12 @@ export function activateN06NativeCapabilities() {
     .registerHandler('support.documents', async (input, context) => { const value = objectInput(input); const toolContext = requireToolContext(context); if (value.action === 'update') return executeTool(updateDocument(toolContext) as ExecutableTool, { id: String(value.id ?? ''), description: String(value.description ?? '') }); return executeTool(createDocument(toolContext) as ExecutableTool, { title: String(value.title ?? 'Untitled'), kind: value.kind }); })
     .registerHandler('support.context', async (input, context) => ({ input, metadata: context?.metadata ?? {}, nucleus: 'N06' }))
     .registerHandler('support.streaming', async (input, context) => { if (context?.dataStream && typeof (context.dataStream as { write?: unknown }).write === 'function') (context.dataStream as { write: (value: unknown) => void }).write({ type: 'data-kind', data: 'n06-stream', transient: true }); return input; })
-    .registerHandler('support.mesh', async (input) => ({ accepted: true, protocol: 'soul-mesh/1', nucleus: 'N06', payload: input })).registerHandler('superagi.agent.create', async (input, context) => executeSuperAGI({ capability: 'superagi.agent.create', input }, context)).registerHandler('superagi.agent.run', async (input, context) => executeSuperAGI({ capability: 'superagi.agent.run', input }, context)).registerHandler('superagi.agent.run-status', async (input, context) => executeSuperAGI({ capability: 'superagi.agent.run-status', input }, context)).registerHandler('superagi.agent.pause', async (input, context) => executeSuperAGI({ capability: 'superagi.agent.pause', input }, context)).registerHandler('superagi.agent.resume', async (input, context) => executeSuperAGI({ capability: 'superagi.agent.resume', input }, context)).registerHandler('superagi.agent.update', async (input, context) => executeSuperAGI({ capability: 'superagi.agent.update', input }, context));
+    .registerHandler('support.mesh', async (input) => ({ accepted: true, protocol: 'soul-mesh/1', nucleus: 'N06', payload: input })).registerHandler('superagi.agent.create', async (input, context) => executeSuperAGI({ capability: 'superagi.agent.create', input }, context)).registerHandler('superagi.agent.run', async (input, context) => executeSuperAGI({ capability: 'superagi.agent.run', input }, context)).registerHandler('superagi.agent.run-status', async (input, context) => executeSuperAGI({ capability: 'superagi.agent.run-status', input }, context)).registerHandler('superagi.agent.pause', async (input, context) => executeSuperAGI({ capability: 'superagi.agent.pause', input }, context)).registerHandler('superagi.agent.resume', async (input, context) => executeSuperAGI({ capability: 'superagi.agent.resume', input }, context)).registerHandler('superagi.agent.update', async (input, context) => executeSuperAGI({ capability: 'superagi.agent.update', input }, context))
+    .registerHandler('metagpt.project.run', async (input, context) => executeMetaGPTProject(input, String(context?.metadata?.correlationId ?? ''), fetch, context))
+    .registerHandler('metagpt.project.status', async () => metaGPTStatus())
+    .registerHandler('letta.agent.message', async (input, context) => executeLettaMessage(input, String(context?.metadata?.correlationId ?? ''), fetch, context))
+    .registerHandler('letta.agent.history', async (input, context) => executeLettaHistory(input, String(context?.metadata?.correlationId ?? ''), fetch, context))
+    .registerHandler('letta.agent.status', async (input, context) => executeLettaAgentStatus(input, String(context?.metadata?.correlationId ?? ''), fetch, context));
   return n06Processor;
 }
 activateN06NativeCapabilities();

@@ -21,7 +21,12 @@ export type Nucleus06Capability =
   | 'superagi.agent.run-status'
   | 'superagi.agent.pause'
   | 'superagi.agent.resume'
-  | 'superagi.agent.update';
+  | 'superagi.agent.update'
+  | 'metagpt.project.run'
+  | 'metagpt.project.status'
+  | 'letta.agent.message'
+  | 'letta.agent.history'
+  | 'letta.agent.status';
 
 export const NUCLEUS_06_CAPABILITIES: readonly Nucleus06Capability[] = [
   'support.context',
@@ -37,6 +42,11 @@ export const NUCLEUS_06_CAPABILITIES: readonly Nucleus06Capability[] = [
   'superagi.agent.pause',
   'superagi.agent.resume',
   'superagi.agent.update',
+  'metagpt.project.run',
+  'metagpt.project.status',
+  'letta.agent.message',
+  'letta.agent.history',
+  'letta.agent.status',
 ] as const;
 
 export const NUCLEUS_06_ROLE: Nucleus06Role = 'support';
