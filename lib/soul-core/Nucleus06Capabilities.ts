@@ -26,7 +26,9 @@ export type Nucleus06Capability =
   | 'metagpt.project.status'
   | 'letta.agent.message'
   | 'letta.agent.history'
-  | 'letta.agent.status';
+  | 'letta.agent.status'
+  | 'external.capability.resolve@1.0.0'
+  | 'external.capability.fabric.describe@1.0.0';
 
 export const NUCLEUS_06_CAPABILITIES: readonly Nucleus06Capability[] = [
   'support.context',
@@ -47,6 +49,8 @@ export const NUCLEUS_06_CAPABILITIES: readonly Nucleus06Capability[] = [
   'letta.agent.message',
   'letta.agent.history',
   'letta.agent.status',
+  'external.capability.resolve@1.0.0',
+  'external.capability.fabric.describe@1.0.0',
 ] as const;
 
 export const NUCLEUS_06_ROLE: Nucleus06Role = 'support';
