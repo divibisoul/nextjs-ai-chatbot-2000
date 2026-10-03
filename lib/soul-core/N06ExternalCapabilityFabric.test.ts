@@ -1,0 +1,4 @@
+import assert from 'node:assert/strict';import test from 'node:test';import {describeN06ExternalCapabilityFabric,providersByFunction,resolveN06ExternalProvider} from './N06ExternalCapabilityFabric';
+test('N06 fabric contains 25 upstream sources',()=>{const f=describeN06ExternalCapabilityFabric();assert.equal(f.providerCount,25);assert.equal(resolveN06ExternalProvider('metagpt').revision,'11cdf466d042aece04fc6cfd13b28e1a70341b1f');assert.equal(resolveN06ExternalProvider('letta').n06Functions.includes('letta.agent.message'),true);assert.equal(resolveN06ExternalProvider('dspy').canonicalOwner,'N06');});
+test('N06 affinity resolves memory, agent and learning functions',()=>{assert.ok(providersByFunction('conversation.memory').some(p=>p.id==='letta'));assert.ok(providersByFunction('agent.execution').some(p=>p.id==='smolagents'));});
+test('unknown provider fails closed',()=>{assert.throws(()=>resolveN06ExternalProvider('unknown'),/N06_EXTERNAL_PROVIDER_UNKNOWN/);});
