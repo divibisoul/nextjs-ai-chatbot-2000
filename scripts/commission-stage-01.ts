@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { sendFromN06 } from '../lib/soul-mesh/N06PeerAdapter';
+import { sendFromN06 } from '../lib/soul-mesh/N06PeerAdapter.ts';
 
 const correlationId = process.env.SOUL_STAGE_CORRELATION_ID?.trim() || randomUUID();
 const upstream = process.env.SOUL_STAGE_UPSTREAM_RESULT ? JSON.parse(process.env.SOUL_STAGE_UPSTREAM_RESULT) : { seed: true };
