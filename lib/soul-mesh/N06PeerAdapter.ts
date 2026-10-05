@@ -4,9 +4,17 @@ import { createSoulMeshMessage, validateSoulMeshMessage } from './SoulMeshProtoc
 import { createSoulMeshNonce, signSoulMeshMessage, verifySoulMeshResponse } from './SoulMeshHmac';
 
 export type N06Peer=Exclude<SoulNucleus,'N06'>;
-/** N07 is now an active federated peer. Final fusion remains a separate commissioning stage. */
-const ACTIVE_PEERS:readonly N06Peer[]=['N01','N02','N03','N04','N05','N07'];
-const STRUCTURAL_PEERS:readonly N06Peer[]=['N01','N02','N03','N04','N05','N07'];
+/**
+ * Runtime boundary for N06 peer execution.
+ * N01-N05 are active executable peers for this engineering stage.
+ * N07 remains represented in topology/discovery as structural-only until the
+ * final N01↔N06↔N07 commissioning gate is explicitly opened.
+ */
+const ACTIVE_PEERS:readonly N06Peer[]=['N01','N02','N03','N04','N05'];
+const STRUCTURAL_PEERS:readonly N06Peer[]=['N07'];
+export const N06_ACTIVE_PEERS=ACTIVE_PEERS;
+export const N06_STRUCTURAL_PEERS=STRUCTURAL_PEERS;
+export const N06_ALL_PEERS:readonly N06Peer[]=[...ACTIVE_PEERS,...STRUCTURAL_PEERS];
 const ENV:Record<N06Peer,string>={N01:'SOUL_MESH_N01_URL',N02:'SOUL_MESH_N02_URL',N03:'SOUL_MESH_N03_URL',N04:'SOUL_MESH_N04_URL',N05:'SOUL_MESH_N05_URL',N07:'SOUL_MESH_N07_URL'};
 const DEFAULT_TIMEOUT=15000, MAX_TIMEOUT=60000, MAX_RETRIES=2;
 function timeout(ms:number){return Math.min(MAX_TIMEOUT,Math.max(1000,Math.floor(ms)));}
@@ -36,3 +44,6 @@ export async function sendFromN06(target:N06Peer,capability:string,payload:unkno
 }
 export async function probeN06Peer(target:N06Peer){try{return{id:target,reachable:true,details:await sendFromN06(target,'mesh.describe',{from:'N06',protocol:'soul-mesh/1'})};}catch(error){return{id:target,reachable:false,error:error instanceof Error?error.message:String(error)};}}
 export async function probeAllN06Peers(){return Promise.all(ACTIVE_PEERS.map(probeN06Peer));}
+
+/** Structural N07 is never probed through the generic executable-peer path. */
+export function describeN06StructuralPeers(){return STRUCTURAL_PEERS.map(id=>({id,url:process.env[ENV[id]]?.trim().replace(/\/$/,'')??'',execution:'structural-only' as const}));}
