@@ -15,7 +15,7 @@ Run `node scripts/soul-mesh-connect-all.mjs` with the five peer URLs configured.
 
 ## Current seven-nucleus extension
 
-The historical five-peer instructions above are preserved. The current implementation extends N06 to peers N01, N02, N03, N04, N05 and N07. The active canonical endpoint is `POST /api/soul-mesh` using the `soul-mesh/1`, contract `1.1.0` envelope. Current diagnostics have been aligned to that endpoint and validate response identity/correlation rather than treating HTTP reachability alone as success.
+The historical five-peer instructions above are preserved. The seven-nucleus topology remains visible, while generic N06 execution is separated into active peers N01, N02, N03, N04 and N05 plus structural-only N07. The active canonical endpoint is `POST /api/soul-mesh` using the `soul-mesh/1`, contract `1.1.0` envelope. Current diagnostics validate response identity/correlation rather than treating HTTP reachability alone as success.
 
 ## Design rules
 
@@ -25,3 +25,8 @@ The historical five-peer instructions above are preserved. The current implement
 - Requests carry correlation and trace context so a multi-hop combo can be reconstructed. This follows the distributed tracing principle of propagating context across process boundaries. See OpenTelemetry context propagation: https://opentelemetry.io/docs/concepts/context-propagation/.
 - Health and readiness are distinct operational concepts; a healthy process is not necessarily ready to accept peer work. See Kubernetes probe guidance: https://kubernetes.io/docs/concepts/workloads/pods/probes/.
 - No claim of live connectivity is made until the peer processes are reachable and the probe returns successful responses.
+
+
+## Lote 3 additive peer-boundary reconciliation — 2026-10-05
+
+N06 now distinguishes active executable peers from structural-only N07. No historical topology is deleted; the distinction is enforced at the generic peer execution boundary and reflected in discovery metadata.

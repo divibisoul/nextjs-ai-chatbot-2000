@@ -21,7 +21,7 @@ N06 <-> N05 <-> N04
 
 ## Current seven-nucleus extension
 
-The original coordination record is preserved. Current N06 code now recognizes N07 as an active federated peer, while N07 remains a distinct final commissioning stage. The canonical peer count for N06 is six peers (N01, N02, N03, N04, N05, N07) with six inbound and six outbound logical channels.
+The original coordination record is preserved. The seven-nucleus topology remains visible, but N06 generic peer execution is explicitly separated: active execution peers are N01, N02, N03, N04 and N05; N07 remains structural-only for the final N01↔N06↔N07 commissioning stage. The legacy all-peer record remains available as topology metadata.
 
 ## Required next work
 1. Audit the actual N05 agent registry/execution path.
@@ -40,3 +40,8 @@ WHAT_CHANGED: capability composition + agent-aware synergy layer.
 WHAT_WAS_FOUND: existing Mesh/capability infrastructure must be extended rather than duplicated.
 WHAT_REMAINS: bidirectional real execution wiring between N06 and N05, based on their actual agent/tool registries.
 WHAT_NEXT_AGENT_SHOULD_DO: inspect real N05/N06 registries and execution handlers before adding any new abstraction.
+
+
+## Lote 3 additive peer-boundary reconciliation — 2026-10-05
+
+N06 now distinguishes active executable peers from structural-only N07. No historical topology is deleted; the distinction is enforced at the generic peer execution boundary and reflected in discovery metadata.

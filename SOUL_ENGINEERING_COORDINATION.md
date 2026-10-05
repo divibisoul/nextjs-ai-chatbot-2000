@@ -14,7 +14,7 @@ Live runtime/E2E > automated integration test > unit/processor/race/build valida
 Record substantial-front start time; reassess long-running work; verify current HEAD, changed files, latest CI state and remaining blockers before delivery. Use coverage/health graphs as a delivery decision aid, never as a substitute for tests. Delivery requires a final repository re-audit whose state matches the report.
 
 ## Seven-nucleus topology
-Peers for N06 are N01, N02, N03, N04, N05 and N07. Six IN and six OUT logical channels exist for N06 in the final seven-node preparation. The six core nuclei still form 15 unordered peer pairs / 30 directed logical links. N07 is deliberately the final commissioning stage and must receive stabilized ingress/egress, discovery, delegation, authorization, correlation, recovery, functions, tools and agents from the preceding fronts.
+N06 generic execution peers are N01, N02, N03, N04 and N05. N07 remains a structural-only peer in the generic N06 boundary until the final N01↔N06↔N07 commissioning stage. The legacy seven-nucleus topology remains represented separately for architecture and channel planning; executable peer discovery/probing must use only the active set.
 
 ## Required order
 Stabilize N06↔N05, N05↔N04, N04↔N03, N03↔N02 and N02↔N01. Then complete N01↔N06↔N07 as the final fusion stage. N07 remains an independent AI runtime and must not replace N01 or N06.
@@ -34,3 +34,8 @@ Support temporary agent federation (Planner, Researcher, Analyzer, Executor, Val
 SOUL Super GPU / SuperCompute is a logical distributed parallel-processing fabric: TASK → DECOMPOSITION → SCHEDULER → CAPABILITY ROUTER → PARALLEL EXECUTION → RESULT AGGREGATION → VALIDATION → FINAL RESULT. Combine inter-nucleus and intra-nucleus workers when dependencies permit. N06's native agents, tools and capabilities must be exposed to this fabric without duplication.
 
 Every substantial handoff records WHAT_CHANGED, WHAT_WAS_FOUND, WHAT_REMAINS, WHAT_NEXT_AGENT_SHOULD_DO, source, target, connection, commit, branch, dependencies, elapsed time, verification evidence, compatibility and commissioning state. Coverage/health/performance graphs support delivery decisions; they never substitute for tests.
+
+
+## Lote 3 additive peer-boundary reconciliation — 2026-10-05
+
+N06 now distinguishes active executable peers from structural-only N07. No historical topology is deleted; the distinction is enforced at the generic peer execution boundary and reflected in discovery metadata.
