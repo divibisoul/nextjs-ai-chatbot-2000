@@ -18,7 +18,9 @@
     "execution": "N06 planning/reasoning/tool boundary",
     "verification": "plan-to-task + tool invocation + reasoning contract",
     "structural_state": "REAL",
-    "runtime_state": "PROJECTED"
+    "runtime_state": "PROJECTED_UNTIL_PROVIDER_E2E",
+    "external_fabric": "lib/soul-core/N06ExternalCapabilityFabric.ts"
   },
-  "rule": "upstream source remains independent; adapter/configuration/runtime evidence is required before EXECUTABLE"
+  "rule": "upstream source remains independent; adapter/configuration/runtime evidence is required before EXECUTABLE",
+  "upstream_capability_source_count": 25
 }

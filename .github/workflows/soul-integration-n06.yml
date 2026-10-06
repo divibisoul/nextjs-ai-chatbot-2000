@@ -11,13 +11,47 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          submodules: recursive
+          submodules: false
       - name: Validate SOUL identity
         run: test -s SOUL_ECOSYSTEM.md
-      - name: Validate submodules
+      - name: Validate 4 pinned N06 provider gitlinks
         shell: bash
         run: |
-          set -e
-          if test -f .gitmodules; then
-            git config -f .gitmodules --get-regexp '^submodule\..*\.path$' | awk '{print $2}' | while read p; do test -e "$p"; done
-          fi
+          set -euo pipefail
+          test "$(git ls-tree HEAD integrations/soul-upstream/openhands | awk '{print $3}')" = "2414d6ee5e31bede2e78211f72b58e9949575a75"
+          test "$(git ls-tree HEAD integrations/soul-upstream/metagpt | awk '{print $3}')" = "11cdf466d042aece04fc6cfd13b28e1a70341b1f"
+          test "$(git ls-tree HEAD integrations/soul-upstream/smolagents | awk '{print $3}')" = "c30b115286e000e98711fae5e85993547b73d826"
+          test "$(git ls-tree HEAD integrations/soul-upstream/dspy | awk '{print $3}')" = "ba3f9198efe5d125c7c1a2b40b1f1e6166209bd2"
+
+      - name: Materialize pinned N06 provider submodules
+        run: |
+          set -euo pipefail
+          git submodule sync -- integrations/soul-upstream/openhands integrations/soul-upstream/metagpt integrations/soul-upstream/smolagents integrations/soul-upstream/dspy
+          git submodule update --init -- integrations/soul-upstream/openhands integrations/soul-upstream/metagpt integrations/soul-upstream/smolagents integrations/soul-upstream/dspy
+          test "$(git -C integrations/soul-upstream/openhands rev-parse HEAD)" = "2414d6ee5e31bede2e78211f72b58e9949575a75"
+          test "$(git -C integrations/soul-upstream/metagpt rev-parse HEAD)" = "11cdf466d042aece04fc6cfd13b28e1a70341b1f"
+          test "$(git -C integrations/soul-upstream/smolagents rev-parse HEAD)" = "c30b115286e000e98711fae5e85993547b73d826"
+          test "$(git -C integrations/soul-upstream/dspy rev-parse HEAD)" = "ba3f9198efe5d125c7c1a2b40b1f1e6166209bd2"
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.12.3
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install exact lock
+        run: pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Validate N06 25-source capability fabric
+        run: |
+          python3 - <<'PY'
+          import json
+          m=json.load(open('integrations/soul-25-augmentation.json'))
+          assert m['external_provider_count'] == 25
+          assert len(m['external_providers']) == 25
+          print('N06 25-source fabric: PASS')
+          PY
+      - name: N06 external adapter regression tests
+        run: pnpm exec tsx --test lib/soul-core/N06ExternalCapabilityFabric.test.ts lib/soul-core/N06MetaGPTBridge.test.ts lib/soul-core/N06LettaBridge.test.ts lib/soul-mesh/N06ExternalProviderAdapters.test.ts
+      - name: MetaGPT runner syntax
+        run: python3 -m py_compile scripts/n06-metagpt-runner.py
