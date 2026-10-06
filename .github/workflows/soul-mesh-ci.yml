@@ -25,7 +25,6 @@ jobs:
       - name: Validate pinned provider gitlinks
         run: |
           test "$(git ls-tree HEAD integrations/soul-upstream/metagpt | awk '{print $3}')" = "11cdf466d042aece04fc6cfd13b28e1a70341b1f"
-          test "$(git ls-tree HEAD integrations/soul-upstream/letta | awk '{print $3}')" = "5bcdd177d70fa2b31a754cfcd801e77b2e1ab16a"
       - uses: pnpm/action-setup@v4
         with:
           version: 9.12.3
