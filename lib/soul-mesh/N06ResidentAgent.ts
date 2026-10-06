@@ -16,6 +16,6 @@ export const N06_RESIDENT_AGENT = {
   publishedCapabilities: ['mesh.health','mesh.discovery','mesh.resident.describe@1.0.0','composition.*','planning.*','summarize','session','external.capability.resolve@1.0.0','external.capability.fabric.describe@1.0.0'],
   upstreamProviderCount: 25,
   externalFabric: 'N06ExternalCapabilityFabric',
-  authority: 'N06 owns cognition/synthesis/validation; DSPy and agent frameworks are bounded implementation providers.';
+  authority: 'N06 owns cognition/synthesis/validation; DSPy and agent frameworks are bounded implementation providers.',
   evidence: 'soul-evidence/1',
 } as const;
