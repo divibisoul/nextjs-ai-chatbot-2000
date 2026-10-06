@@ -13,6 +13,7 @@ import { createMeshToolSession, meshDataStream } from '@/lib/soul-mesh/N06MeshTo
 import { N06_RESIDENT_AGENT } from '@/lib/soul-mesh/N06ResidentAgent';
 import { executeMetaGPTProject, metaGPTStatus } from '@/lib/soul-core/N06MetaGPTBridge';
 import { executeLettaMessage, executeLettaHistory, executeLettaAgentStatus, lettaStatus } from '@/lib/soul-core/N06LettaBridge';
+import { requestN07CooperationHandshake, requestN07CooperationExchange } from '@/lib/soul-mesh/N06CooperationBridge';
 import { describeOpenHandsAdapter, runOpenHands, OPENHANDS_CAPABILITY } from '@/lib/soul-mesh/OpenHandsAdapter';
 import { describeSmolAgentsAdapter, runSmolAgents, SMOLAGENTS_CAPABILITY, type SmolAgentsRequest } from '@/lib/soul-mesh/SmolAgentsAdapter';
 import { describeDSPyAdapter, runDSPy, DSPY_CAPABILITY, type DSPyRequest } from '@/lib/soul-mesh/DSPyAdapter';
@@ -28,7 +29,7 @@ const RATE_LIMIT=100;
 const RATE_WINDOW_MS=60_000;
 const seenRequests=new Map<string,number>();
 const peerBuckets=new Map<string,number[]>();
-const EXTERNAL_PROVIDER_CAPABILITIES=[OPENHANDS_CAPABILITY,SMOLAGENTS_CAPABILITY,DSPY_CAPABILITY,'metagpt.project.execute@1.0.0','letta.message.execute@1.0.0','letta.history.read@1.0.0','letta.agent.status@1.0.0'] as const;
+const EXTERNAL_PROVIDER_CAPABILITIES=[OPENHANDS_CAPABILITY,SMOLAGENTS_CAPABILITY,DSPY_CAPABILITY,'metagpt.project.execute@1.0.0','letta.message.execute@1.0.0','letta.history.read@1.0.0','letta.agent.status@1.0.0','cooperation.handshake@1.0.0','cooperation.exchange@1.0.0'] as const;
 function secret(){return process.env.SOUL_MESH_HMAC_SECRET ?? '';}
 function authorized(request:Request,message:SoulMeshMessage){const configured=secret();if(!configured)return process.env.NODE_ENV !== 'production';const nonce=request.headers.get('x-soul-mesh-nonce') ?? message.meta?.nonce ?? '';const hmac=request.headers.get('x-soul-mesh-hmac') ?? '';return verifySoulMeshMessage(message,configured,nonce,hmac);}
 function acceptOnce(id:string):boolean{const now=Date.now();for(const [key,t] of seenRequests)if(now-t>REPLAY_WINDOW_MS)seenRequests.delete(key);if(seenRequests.has(id))return false;seenRequests.set(id,now);return true;}
@@ -46,6 +47,11 @@ registry.register({id:'N06-Letta-Agent',name:'N06 Letta Memory Agent',capabiliti
   case 'letta.agent.status@1.0.0': return executeLettaAgentStatus(m.payload,m.correlationId,fetch,context as any);
   default: throw new Error('N06_LETTA_CAPABILITY_UNSUPPORTED');
  }
+}});
+registry.register({id:'N06-Cooperation-Agent',name:'N06 N07 Cooperative Control Agent',capabilities:['cooperation.handshake@1.0.0','cooperation.exchange@1.0.0'],execute:m=>{
+ const payload=(m.payload??{}) as Record<string,unknown>;
+ if(m.capability==='cooperation.handshake@1.0.0') return requestN07CooperationHandshake({target:String(payload.target??'') as any,requiredCapability:String(payload.required_capability??payload.requiredCapability??''),correlationId:m.correlationId});
+ return requestN07CooperationExchange({target:String(payload.target??'') as any,capability:String(payload.capability??''),payload:payload.payload,correlationId:m.correlationId});
 }});
 return registry;}
 function validMessage(message:unknown):message is SoulMeshMessage{try{validateSoulMeshMessage(message);const value=message as SoulMeshMessage;return value.target===NUCLEUS_ID&&value.source!==NUCLEUS_ID&&value.kind==='request'&&typeof value.capability==='string'&&Math.abs(Date.now()-value.timestamp)<=MAX_CLOCK_SKEW_MS;}catch{return false;}}
