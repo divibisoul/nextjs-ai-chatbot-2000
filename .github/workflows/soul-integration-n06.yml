@@ -21,7 +21,9 @@ jobs:
           test "$(git ls-tree HEAD integrations/soul-upstream/openhands | awk '{print $3}')" = "2414d6ee5e31bede2e78211f72b58e9949575a75"
           test "$(git ls-tree HEAD integrations/soul-upstream/metagpt | awk '{print $3}')" = "11cdf466d042aece04fc6cfd13b28e1a70341b1f"
           test "$(git ls-tree HEAD integrations/soul-upstream/smolagents | awk '{print $3}')" = "c30b115286e000e98711fae5e85993547b73d826"
-          test "$(git ls-tree HEAD integrations/soul-upstream/dspy | awk '{print $3}')" = "ba3f9198efe5d125c7c1a2b40b1f1e6166209bd2"      - name: Materialize pinned N06 provider submodules
+          test "$(git ls-tree HEAD integrations/soul-upstream/dspy | awk '{print $3}')" = "ba3f9198efe5d125c7c1a2b40b1f1e6166209bd2"
+
+      - name: Materialize pinned N06 provider submodules
         run: |
           set -euo pipefail
           git submodule sync -- integrations/soul-upstream/openhands integrations/soul-upstream/metagpt integrations/soul-upstream/smolagents integrations/soul-upstream/dspy
