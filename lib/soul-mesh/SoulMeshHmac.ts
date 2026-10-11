@@ -1,4 +1,8 @@
-import { createHmac, randomBytes, timingSafeEqual } from 'node:crypto';
+import { createHmac, randomBytes, randomUUID, timingSafeEqual } from 'node:crypto';
+
+function assertHmacSecret(secret: string): void {
+  if (Buffer.byteLength(secret, 'utf8') < 32) throw new Error('SOUL_MESH_HMAC_SECRET_TOO_SHORT');
+}
 import type { SoulMeshMessage } from './SoulMeshProtocol';
 
 const MAX_CLOCK_SKEW_MS = 30_000;
@@ -31,6 +35,7 @@ export function signSoulMeshMessage(
   nonce: string,
 ): string {
   if (!secret) throw new Error('SOUL_MESH_HMAC_SECRET_MISSING');
+  assertHmacSecret(secret);
   return createHmac('sha256', secret)
     .update(canonicalize(message, nonce), 'utf8')
     .digest('hex');
@@ -43,7 +48,7 @@ export function verifySoulMeshMessage(
   hmac: string,
   now = Date.now(),
 ): boolean {
-  if (!secret || !nonce || !hmac || !Number.isFinite(message.timestamp)) return false;
+  if (!secret || Buffer.byteLength(secret, 'utf8') < 32 || !nonce || !hmac || !Number.isFinite(message.timestamp)) return false;
   if (Math.abs(now - message.timestamp) > MAX_CLOCK_SKEW_MS) return false;
   try {
     const expected = signSoulMeshMessage(message, secret, nonce);
@@ -63,11 +68,12 @@ export function signSoulMeshResponse(
   secret: string,
 ): { message: SoulMeshMessage; nonce: string; hmac: string } {
   if (!secret) throw new Error('SOUL_MESH_HMAC_SECRET_MISSING');
+  assertHmacSecret(secret);
   const nonce = createSoulMeshNonce();
   const message: SoulMeshMessage = {
     protocol: 'soul-mesh/1',
     contractVersion: '1.1.0',
-    id: crypto.randomUUID(),
+    id: randomUUID(),
     correlationId: request.correlationId,
     source: request.target,
     target: request.source,
