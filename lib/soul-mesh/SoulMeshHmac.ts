@@ -94,6 +94,9 @@ export function signSoulMeshResponse(
     },
   };
   const hmac = signSoulMeshMessage(message, secret, nonce);
+  // Carry the signature in the envelope that is sent over Mesh, while keeping
+  // the signature field excluded from canonicalization to avoid self-reference.
+  message.hmac = hmac;
   return { message, nonce, hmac };
 }
 
