@@ -41,7 +41,7 @@ export class N06PeerMeshBridge {
         last=error;state.failures+=1;state.healthy=false;
         if(state.failures>=5)state.openedUntil=Date.now()+60000;
         const message=error instanceof Error?error.message:String(error);
-        const transient=/N06_MESH_HTTP_(429|5\\d\\d)|fetch failed|ECONNRESET|ECONNREFUSED|EAI_AGAIN|AbortError|timed? ?out|network/i.test(message);
+        const transient=/N06_MESH_HTTP_(429|5\d\d)|fetch failed|ECONNRESET|ECONNREFUSED|EAI_AGAIN|AbortError|timed? ?out|network/i.test(message);
         if(attempt+1<maxAttempts&&transient&&!/HMAC|AUTH|INVALID|REPLAY|CORRELATION/i.test(message)){await new Promise(r=>setTimeout(r,150*(2**attempt)));continue;}
         break;
       }
