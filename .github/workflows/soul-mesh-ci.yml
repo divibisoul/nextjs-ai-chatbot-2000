@@ -35,20 +35,8 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: divibisoul/Orquestrador-
-          ref: a121f73ab477014ff11ae9156fbfffea9b810882
+          ref: 1b125cf19b5baafd7959b88f3cb90abd201a3d44
           path: .integration/n07
-      - name: Expose N07 auth rejection reason in test-only checkout
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          path = Path('.integration/n07/mesh/http.go')
-          source = path.read_text()
-          old = 'if err := g.authenticateWire(wire, r, envelope); err != nil {'
-          new = old + '\n\t\tfmt.Printf("N07 mesh auth rejected: %v\\n", err)'
-          if old not in source:
-              raise SystemExit('N07 auth diagnostic patch anchor not found')
-          path.write_text(source.replace(old, new, 1))
-          PY
       - name: Set up Go for pinned N07 runtime
         uses: actions/setup-go@v5
         with:
