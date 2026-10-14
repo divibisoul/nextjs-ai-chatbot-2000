@@ -1,5 +1,4 @@
-import crypto from 'node:crypto';
-import { createHmac, timingSafeEqual } from 'node:crypto';
+import crypto, { createHmac, timingSafeEqual } from 'node:crypto';
 import type { SoulMeshMessage, SoulNucleus } from './SoulMeshProtocol';
 import { createSoulMeshMessage, validateSoulMeshMessage } from './SoulMeshProtocol';
 import { createSoulMeshNonce, signSoulMeshMessage, verifySoulMeshResponse } from './SoulMeshHmac';
