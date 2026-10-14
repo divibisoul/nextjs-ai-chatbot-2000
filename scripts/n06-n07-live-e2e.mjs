@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
-import { sendFromN06 } from '../lib/soul-mesh/N06PeerAdapter.ts';
+import adapterModule from '../lib/soul-mesh/N06PeerAdapter.ts';
+const { sendFromN06 } = adapterModule.default ?? adapterModule;
+if (typeof sendFromN06 !== 'function') throw new Error('N06_ADAPTER_EXPORT_NOT_FOUND');
 
 const endpoint = process.env.SOUL_MESH_N07_URL?.trim();
 const secret = process.env.SOUL_MESH_HMAC_SECRET?.trim();
