@@ -20,13 +20,32 @@ const DEFAULT_TIMEOUT=15000, MAX_TIMEOUT=60000, MAX_RETRIES=2;
 function timeout(ms:number){return Math.min(MAX_TIMEOUT,Math.max(1000,Math.floor(ms)));}
 function meshSecret(){return (process.env.SOUL_MESH_HMAC_SECRET??'').trim()||(process.env.SOUL_MESH_SECRET??'').trim();}
 const RETRY_SAFE_CAPABILITIES=new Set(['mesh.ping','mesh.describe','mesh.health','capability.list','sara.health','sara.state','sara.capabilities','sara.trace','external.federation.describe@1.0.0','superagi.fabric.describe@1.0.0','cooperation.health@1.0.0']);
-function retryableFailure(error:unknown){const message=error instanceof Error?error.message:String(error);return /N06_MESH_HTTP_(429|5\\d\\d)|fetch failed|ECONNRESET|ECONNREFUSED|EAI_AGAIN|AbortError|timed? ?out|network/i.test(message)&&!/HMAC|AUTH|INVALID|REPLAY|CORRELATION/i.test(message);}
+function retryableFailure(error:unknown){const message=error instanceof Error?error.message:String(error);return /N06_MESH_HTTP_(429|5\d\d)|fetch failed|ECONNRESET|ECONNREFUSED|EAI_AGAIN|AbortError|timed? ?out|network/i.test(message)&&!/HMAC|AUTH|INVALID|REPLAY|CORRELATION/i.test(message);}
+function sortGoMaps(value:unknown):unknown{
+ if(Array.isArray(value))return value.map(sortGoMaps);
+ if(value&&typeof value==='object'){
+  const source=value as Record<string,unknown>;const sorted:Record<string,unknown>={};
+  for(const key of Object.keys(source).sort())sorted[key]=sortGoMaps(source[key]);
+  return sorted;
+ }
+ return value;
+}
+/** Sign N07 requests in the exact field order and nested-map ordering used by Go encoding/json. */
+function signN07Request(message:SoulMeshMessage,secret:string,nonce:string):string{
+ const unsigned={
+  protocol:message.protocol,contractVersion:message.contractVersion,id:message.id,correlationId:message.correlationId,
+  source:message.source,target:message.target,kind:message.kind,capability:message.capability??'',
+  payload:sortGoMaps(message.payload),timestamp:message.timestamp,
+  transport:message.meta?.transport??null,meta:sortGoMaps(message.meta??null),nonce,
+ };
+ return createHmac('sha256',secret).update(JSON.stringify(unsigned),'utf8').digest('hex');
+}
 /** Verify the actual N07 Go response envelope (protocol.MeshEnvelope canonical bytes). */
 export function verifyN07LegacyResponse(request:SoulMeshMessage,response:SoulMeshMessage,secret:string,now=Date.now()):boolean{
  const nonce=String(response.nonce??response.meta?.nonce??'').trim();const signature=String(response.hmac??'').trim();
  if(!secret||Buffer.byteLength(secret,'utf8')<32||!nonce||!/^[0-9a-f]{64}$/i.test(signature)||!Number.isFinite(response.timestamp)||Math.abs(now-response.timestamp)>30000)return false;
  if(response.source!=='N07'||response.target!=='N06'||request.target!=='N07'||response.correlationId!==request.correlationId||(response.kind!=='response'&&response.kind!=='error'))return false;
- const unsigned={version:'1.0',contractVersion:response.contractVersion,messageId:response.id,source:response.source,target:response.target,timestamp:response.timestamp,nonce,correlationId:response.correlationId,type:response.kind==='error'?'ERROR':'TASK_RESULT',payload:{capability:response.capability??request.capability??'',payload:response.payload??{}}};
+ const unsigned={version:'1.0',contractVersion:response.contractVersion,messageId:response.id,source:response.source,target:response.target,timestamp:response.timestamp,nonce,correlationId:response.correlationId,type:response.kind==='error'?'ERROR':'TASK_RESULT',payload:{capability:response.capability??request.capability??'',payload:sortGoMaps(response.payload??{})}};
  const expected=createHmac('sha256',secret).update(JSON.stringify(unsigned),'utf8').digest();const actual=Buffer.from(signature,'hex');return actual.length===expected.length&&timingSafeEqual(actual,expected);
 }
 export function getN06Peers(){return ACTIVE_PEERS.map(id=>({id,url:process.env[ENV[id]]?.trim().replace(/\/$/,'')??''}));}
@@ -52,7 +71,7 @@ export async function sendFromN06(
   const meta={...(message.meta??{})};delete meta.nonce;if(nonce)meta.nonce=nonce;
   const attemptMessage:SoulMeshMessage={...message,timestamp:Date.now(),...(nonce?{nonce}:{}),meta};
   const headers:Record<string,string>={'content-type':'application/json',accept:'application/json','x-soul-correlation-id':attemptMessage.correlationId,'x-soul-trace-id':traceId};
-  if(secret){headers['x-soul-mesh-nonce']=nonce;headers['x-soul-mesh-hmac']=signSoulMeshMessage(attemptMessage,secret,nonce);}
+  if(secret){headers['x-soul-mesh-nonce']=nonce;headers['x-soul-mesh-hmac']=target==='N07'?signN07Request(attemptMessage,secret,nonce):signSoulMeshMessage(attemptMessage,secret,nonce);}
   const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),timeout(timeoutMs));
   try{
    const endpoint=peer.url.endsWith('/api/soul-mesh')?peer.url:`${peer.url}/api/soul-mesh`;
