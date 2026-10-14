@@ -37,6 +37,18 @@ jobs:
           repository: divibisoul/Orquestrador-
           ref: a121f73ab477014ff11ae9156fbfffea9b810882
           path: .integration/n07
+      - name: Expose N07 auth rejection reason in test-only checkout
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('.integration/n07/mesh/http.go')
+          source = path.read_text()
+          old = 'if err := g.authenticateWire(wire, r, envelope); err != nil {'
+          new = old + '\n\t\tfmt.Printf("N07 mesh auth rejected: %v\\n", err)'
+          if old not in source:
+              raise SystemExit('N07 auth diagnostic patch anchor not found')
+          path.write_text(source.replace(old, new, 1))
+          PY
       - name: Set up Go for pinned N07 runtime
         uses: actions/setup-go@v5
         with:
@@ -73,6 +85,12 @@ jobs:
           SOUL_MESH_HMAC_SECRET: ${{ env.SOUL_MESH_HMAC_SECRET }}
           NODE_ENV: test
         run: pnpm exec tsx scripts/n06-n07-live-e2e.mjs
+      - name: Report actual N07 server diagnostics on E2E failure
+        if: failure()
+        run: |
+          if [ -f /tmp/soul-n07.log ]; then
+            cat /tmp/soul-n07.log
+          fi
       - name: Stop actual N07 service
         if: always()
         run: |
