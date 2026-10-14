@@ -16,25 +16,23 @@ import {
   SOUL_MESH_STRUCTURAL_PEERS,
 } from './SoulMeshPeerMatrix';
 
-test('N06 active execution peers remain N01-N05', () => {
-  assert.deepEqual([...N06_ACTIVE_PEERS], ['N01','N02','N03','N04','N05']);
-  assert.deepEqual([...SOUL_MESH_ACTIVE_PEERS], ['N01','N02','N03','N04','N05']);
-  assert.deepEqual(getN06Peers().map(peer => peer.id), ['N01','N02','N03','N04','N05']);
+test('N06 active execution peers include the canonical N07 gateway', () => {
+  assert.deepEqual([...N06_ACTIVE_PEERS], ['N01','N02','N03','N04','N05','N07']);
+  assert.deepEqual([...SOUL_MESH_ACTIVE_PEERS], ['N01','N02','N03','N04','N05','N07']);
+  assert.deepEqual(getN06Peers().map(peer => peer.id), ['N01','N02','N03','N04','N05','N07']);
 });
 
-test('N07 remains present only as structural peer in generic N06 topology', () => {
-  assert.deepEqual([...N06_STRUCTURAL_PEERS], ['N07']);
-  assert.deepEqual([...SOUL_MESH_STRUCTURAL_PEERS], ['N07']);
+test('N07 is no longer structural-only after its authenticated route is enabled', () => {
+  assert.deepEqual([...N06_STRUCTURAL_PEERS], []);
+  assert.deepEqual([...SOUL_MESH_STRUCTURAL_PEERS], []);
   assert.deepEqual([...N06_ALL_PEERS], ['N01','N02','N03','N04','N05','N07']);
   assert.deepEqual([...SOUL_MESH_PEERS], ['N01','N02','N03','N04','N05','N07']);
-  assert.deepEqual(getN06StructuralPeers().map(peer => peer.id), ['N07']);
-  assert.equal(describeN06StructuralPeers()[0].execution, 'structural-only');
+  assert.deepEqual(getN06StructuralPeers().map(peer => peer.id), []);
+  assert.deepEqual(describeN06StructuralPeers(), []);
 });
 
-test('N06 active route set excludes N07 and final structural route is disabled', () => {
-  assert.equal(R6_PEER_ROUTES.length, 10);
-  assert.equal(R6_PEER_ROUTES.some(route => route.peer === 'N07'), false);
-  assert.equal(R7_PEER_ROUTES.length, 2);
-  assert.equal(R7_PEER_ROUTES.every(route => route.peer === 'N07'), true);
-  assert.equal(R7_PEER_ROUTES.every(route => route.enabled === false), true);
+test('N06 active routes include N07 and the structural-only final route is empty', () => {
+  assert.equal(R6_PEER_ROUTES.length, 12);
+  assert.equal(R6_PEER_ROUTES.some(route => route.peer === 'N07' && route.direction === 'out' && route.enabled), true);
+  assert.equal(R7_PEER_ROUTES.length, 0);
 });
