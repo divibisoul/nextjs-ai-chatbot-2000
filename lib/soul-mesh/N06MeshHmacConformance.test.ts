@@ -66,7 +66,7 @@ test('N06 verifies the canonical Go/N07 legacy HMAC response envelope', () => {
     version: '1.0', contractVersion: '1.1.0', messageId: 'n07-legacy-response',
     source: 'N07', target: 'N06', timestamp: Date.now(), nonce: 'n07-legacy-nonce',
     correlationId: request.correlationId, type: 'TASK_RESULT',
-    payload: { capability: 'mesh.ping', payload: { ok: true, nucleus: 'N07', contractVersion: '1.1.0' } },
+    payload: { capability: 'mesh.ping', payload: { contractVersion: '1.1.0', nucleus: 'N07', ok: true } },
   };
   const signature = createHmac('sha256', secret).update(JSON.stringify(unsigned), 'utf8').digest('hex');
   const response: SoulMeshMessage = {
