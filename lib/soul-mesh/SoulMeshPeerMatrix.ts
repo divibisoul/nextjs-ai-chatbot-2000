@@ -1,12 +1,12 @@
 import type { SoulNucleus } from './SoulMeshProtocol';
 
 /**
- * Legacy/all topology is preserved. Executable routing is explicitly narrowed
- * to N01-N05, while N07 is retained only as the final structural stage.
+ * Legacy/all topology is preserved. N01-N07 are active executable peers through
+ * the canonical /api/soul-mesh contract; N06 remains excluded from its own peer list.
  */
 export const SOUL_MESH_PEERS: readonly SoulNucleus[] = ['N01', 'N02', 'N03', 'N04', 'N05', 'N07'];
-export const SOUL_MESH_ACTIVE_PEERS: readonly SoulNucleus[] = ['N01', 'N02', 'N03', 'N04', 'N05'];
-export const SOUL_MESH_STRUCTURAL_PEERS: readonly SoulNucleus[] = ['N07'];
+export const SOUL_MESH_ACTIVE_PEERS: readonly SoulNucleus[] = ['N01', 'N02', 'N03', 'N04', 'N05', 'N07'];
+export const SOUL_MESH_STRUCTURAL_PEERS: readonly SoulNucleus[] = [];
 export type SoulMeshPeer = (typeof SOUL_MESH_PEERS)[number];
 export type SoulMeshActivePeer = (typeof SOUL_MESH_ACTIVE_PEERS)[number];
 export type SoulMeshStructuralPeer = (typeof SOUL_MESH_STRUCTURAL_PEERS)[number];

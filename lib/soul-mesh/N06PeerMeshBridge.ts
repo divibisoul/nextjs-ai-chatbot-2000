@@ -24,23 +24,50 @@ export class N06PeerMeshBridge {
 
   async request(peer:Exclude<NucleusId,'N06'>,capability:string,payload:unknown,correlationId:string=randomUUID(),traceId:string=randomUUID()){
     const state=this.peers.get(peer);
-    if (!state) throw new Error(`PEER_NOT_CONFIGURED:${peer}`);
-    if (state.openedUntil>Date.now()) throw new Error(`PEER_CIRCUIT_OPEN:${peer}`);
-    const started=Date.now(); let last:unknown;
+    if(!state)throw new Error(`PEER_NOT_CONFIGURED:${peer}`);
+    if(state.openedUntil>Date.now())throw new Error(`PEER_CIRCUIT_OPEN:${peer}`);
+    const started=Date.now();
+    const operationMessageId=randomUUID();
+    const retrySafe=new Set(['mesh.ping','mesh.describe','mesh.health','capability.list','sara.health','sara.state','sara.capabilities','sara.trace','external.federation.describe@1.0.0','superagi.fabric.describe@1.0.0','cooperation.health@1.0.0']).has(capability);
+    const maxAttempts=retrySafe?this.retries+1:1;
+    let last:unknown;
     const timeoutMs=Math.min(MAX_TIMEOUT_MS,Math.max(1000,Math.floor(Number(process.env.SOUL_MESH_TIMEOUT_MS??DEFAULT_TIMEOUT_MS))));
-    for(let attempt=0;attempt<=this.retries;attempt++){
+    for(let attempt=0;attempt<maxAttempts;attempt++){
       try{
-        const result=await sendFromN06(peer,capability,payload,timeoutMs,correlationId,traceId);
+        const result=await sendFromN06(peer,capability,payload,timeoutMs,correlationId,traceId,0,operationMessageId);
         state.healthy=true;state.failures=0;state.latencyMs=Date.now()-started;state.openedUntil=0;
-        return {peer,payload:result,status:200,latencyMs:state.latencyMs,attempt,correlationId,traceId};
+        return {peer,payload:result,status:200,latencyMs:state.latencyMs,attempt,correlationId,traceId,operationMessageId};
       }catch(error){
         last=error;state.failures+=1;state.healthy=false;
         if(state.failures>=5)state.openedUntil=Date.now()+60000;
-        if(attempt<this.retries)await new Promise(r=>setTimeout(r,150*(2**attempt)));
+        const message=error instanceof Error?error.message:String(error);
+        const transient=/N06_MESH_HTTP_(429|5\d\d)|fetch failed|ECONNRESET|ECONNREFUSED|EAI_AGAIN|AbortError|timed? ?out|network/i.test(message);
+        if(attempt+1<maxAttempts&&transient&&!/HMAC|AUTH|INVALID|REPLAY|CORRELATION/i.test(message)){await new Promise(r=>setTimeout(r,150*(2**attempt)));continue;}
+        break;
       }
     }
     throw last instanceof Error?last:new Error(`PEER_REQUEST_FAILED:${peer}`);
   }
+  async executePublicCapability(
+    provider:
+      | 'bijux-dag-runtime' | 'ouro-loop' | 'recuris' | 'fedml' | 'hivemind'
+      | 'temporal' | 'hora-graph-core' | 'cognitive-workspace' | 'ravana' | 'ray' | 'nats-go',
+    operation: string,
+    payload: unknown,
+    correlationId = randomUUID(),
+    traceId = correlationId,
+  ) {
+    const normalizedOperation = operation.trim();
+    if (!normalizedOperation) throw new Error('PUBLIC_CAPABILITY_OPERATION_REQUIRED');
+    return this.request(
+      'N07',
+      `external.${provider}.execute@1.0.0`,
+      { payload: { values: [] }, metadata: { provider, external_operation: normalizedOperation, input_json: JSON.stringify(payload ?? null) } },
+      correlationId,
+      traceId,
+    );
+  }
+
   async health(peer:Exclude<NucleusId,'N06'>){const state=this.peers.get(peer);if(!state)return{peer,configured:false,healthy:false};const result=await this.request(peer,'mesh.health',{nucleus:'N06'});return{peer,configured:true,healthy:true,latencyMs:result.latencyMs};}
   async broadcast(capability:string,payload:unknown){return Promise.allSettled(PEERS.filter(p=>this.peers.has(p)&&this.peers.get(p)!.openedUntil<=Date.now()).map(peer=>this.request(peer,capability,payload)));}
   async combo(steps:readonly {target:Exclude<NucleusId,'N06'>;capability:string;payload?:unknown}[]){const correlationId=randomUUID(),traceId=randomUUID();let value:unknown=null;const results:unknown[]=[];for(const step of steps){const result=await this.request(step.target,step.capability,step.payload??value,correlationId,traceId);value=result.payload;results.push(result);}return{correlationId,traceId,results,final:value};}

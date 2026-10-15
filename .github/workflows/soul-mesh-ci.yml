@@ -31,6 +31,60 @@ jobs:
           cache: pnpm
       - name: Verify immutable lockfile
         run: pnpm install --frozen-lockfile --ignore-scripts
+      - name: Checkout pinned N07 runtime for real-process Mesh E2E
+        uses: actions/checkout@v4
+        with:
+          repository: divibisoul/Orquestrador-
+          ref: 1b125cf19b5baafd7959b88f3cb90abd201a3d44
+          path: .integration/n07
+      - name: Set up Go for pinned N07 runtime
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: .integration/n07/go.mod
+          cache-dependency-path: .integration/n07/go.sum
+      - name: Build actual N07 service
+        working-directory: .integration/n07
+        run: go build -o /tmp/soul-n07 ./cmd/nexus
+      - name: Generate ephemeral HMAC secret for process-pair test
+        run: echo "SOUL_MESH_HMAC_SECRET=$(openssl rand -hex 32)" >> "$GITHUB_ENV"
+      - name: Start actual N07 HTTP/Mesh service
+        env:
+          N07_HTTP_ADDR: 127.0.0.1:18080
+        run: |
+          /tmp/soul-n07 > /tmp/soul-n07.log 2>&1 &
+          echo $! > /tmp/soul-n07.pid
+          for attempt in $(seq 1 60); do
+            if curl --fail --silent http://127.0.0.1:18080/health > /dev/null; then
+              echo "N07 health endpoint ready"
+              exit 0
+            fi
+            if ! kill -0 "$(cat /tmp/soul-n07.pid)" 2>/dev/null; then
+              cat /tmp/soul-n07.log
+              exit 1
+            fi
+            sleep 1
+          done
+          cat /tmp/soul-n07.log
+          echo "N07 did not become healthy within 60 seconds"
+          exit 1
+      - name: N06 to N07 real-process bidirectional-contract E2E
+        env:
+          SOUL_MESH_N07_URL: http://127.0.0.1:18080
+          SOUL_MESH_HMAC_SECRET: ${{ env.SOUL_MESH_HMAC_SECRET }}
+          NODE_ENV: test
+        run: pnpm exec tsx scripts/n06-n07-live-e2e.mjs
+      - name: Report actual N07 server diagnostics on E2E failure
+        if: failure()
+        run: |
+          if [ -f /tmp/soul-n07.log ]; then
+            cat /tmp/soul-n07.log
+          fi
+      - name: Stop actual N07 service
+        if: always()
+        run: |
+          if [ -f /tmp/soul-n07.pid ]; then
+            kill "$(cat /tmp/soul-n07.pid)" 2>/dev/null || true
+          fi
       - name: Typecheck Mesh adapter
         run: pnpm exec tsc -p tsconfig.mesh.json --noEmit
       - name: Run nucleus processor tests
@@ -38,6 +92,6 @@ jobs:
       - name: Run N06 cognitive runtime and authority tests
         run: pnpm run test:nucleus06
       - name: Run N06 bidirectional HMAC tests
-        run: pnpm exec tsx --test lib/soul-mesh/SoulMeshHmac.test.ts
+        run: pnpm run test:mesh:hmac
       - name: Emit N06 authority evidence
         run: test -s N06-AUTHORITY-INTEGRITY.json
