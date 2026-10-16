@@ -59,7 +59,7 @@ export async function runSmolAgents(request:SmolAgentsRequest):Promise<Record<st
   const c=config();
   const payload=JSON.stringify({root:c.root,modelId:request.modelId?.trim()||c.modelId,provider:request.provider?.trim()||c.provider,task, maxSteps:Math.min(100,Math.max(1,request.maxSteps??20)),executorType:request.executorType??c.executorType});
   const child=spawn(c.python,[path.resolve('scripts/smolagents_runner.py')],{cwd:process.cwd(),stdio:['pipe','pipe','pipe']});
-  let stdout='',stderr='';child.stdout.setEncoding('utf8');child.stderr.setEncoding('utf8');child.stdout.on('data', (chunk) => {
+  let stdout='';let stderr='';child.stdout.setEncoding('utf8');child.stderr.setEncoding('utf8');child.stdout.on('data', (chunk) => {
     stdout += chunk;
   });
   child.stderr.on('data', (chunk) => {
