@@ -39,7 +39,7 @@ export interface ExternalCapabilitySource {
   readonly targetNuclei: readonly string[];
   readonly strategy: ExternalIntegrationStrategy;
   readonly licenseScope: string;
-  readonly status: 'candidate';
+  readonly status: 'candidate' | 'adapter-bound';
 }
 
 
@@ -56,6 +56,29 @@ const VERIFIED_EXTERNAL_ACTIVATION_MAP: Readonly<Record<string, string>> = {
 };
 
 export const N06_EXTERNAL_CAPABILITY_SOURCES: readonly ExternalCapabilitySource[] = [
+  {
+    id: 'EXT-LETTA-STATEFUL',
+    sourceRepository: 'letta-ai/letta',
+    sourcePath: 'letta',
+    capabilityClass: 'memory',
+    capability: 'stateful-agent messaging, persistent memory and agent state',
+    targetNuclei: ['N06', 'N07', 'SARA'],
+    strategy: 'ADAPTER',
+    licenseScope: 'Apache-2.0',
+    status: 'adapter-bound',
+  },
+  {
+    id: 'EXT-METAGPT-TEAM',
+    sourceRepository: 'FoundationAgents/MetaGPT',
+    sourcePath: 'metagpt/team.py',
+    capabilityClass: 'agents',
+    capability: 'role-based multi-agent software project execution through MetaGPT Team',
+    targetNuclei: ['N06', 'N07'],
+    strategy: 'ADAPTER',
+    licenseScope: 'VERIFY LICENSE AT ACQUISITION',
+    status: 'adapter-bound',
+  },
+
   {
     id: 'EXT-DEERFLOW-TOOL-SEARCH',
     sourceRepository: 'bytedance/deer-flow',

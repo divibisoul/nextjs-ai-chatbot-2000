@@ -35,8 +35,8 @@ test('SuperAGI create uses the real versioned API path and preserves correlation
     assert.equal((result.payload as Record<string, unknown>).agent_id, 7);
     assert.equal(result.correlationId, 'corr-superagi-create');
   } finally {
-    if (previousUrl === undefined) delete process.env.SOUL_SUPERAGI_URL; else process.env.SOUL_SUPERAGI_URL = previousUrl;
-    if (previousKey === undefined) delete process.env.SOUL_SUPERAGI_API_KEY; else process.env.SOUL_SUPERAGI_API_KEY = previousKey;
+    if (previousUrl === undefined) Reflect.deleteProperty(process.env, 'SOUL_SUPERAGI_URL'); else process.env.SOUL_SUPERAGI_URL = previousUrl;
+    if (previousKey === undefined) Reflect.deleteProperty(process.env, 'SOUL_SUPERAGI_API_KEY'); else process.env.SOUL_SUPERAGI_API_KEY = previousKey;
   }
 });
 
@@ -59,8 +59,8 @@ test('SuperAGI run uses the real versioned API path', async () => {
 
     assert.equal((result.payload as Record<string, unknown>).run_id, 11);
   } finally {
-    if (previousUrl === undefined) delete process.env.SOUL_SUPERAGI_URL; else process.env.SOUL_SUPERAGI_URL = previousUrl;
-    if (previousKey === undefined) delete process.env.SOUL_SUPERAGI_API_KEY; else process.env.SOUL_SUPERAGI_API_KEY = previousKey;
+    if (previousUrl === undefined) Reflect.deleteProperty(process.env, 'SOUL_SUPERAGI_URL'); else process.env.SOUL_SUPERAGI_URL = previousUrl;
+    if (previousKey === undefined) Reflect.deleteProperty(process.env, 'SOUL_SUPERAGI_API_KEY'); else process.env.SOUL_SUPERAGI_API_KEY = previousKey;
   }
 });
 
@@ -76,7 +76,7 @@ test('SuperAGI bridge fails closed when endpoint or key is absent', async () => 
       /SUPERAGI_NOT_CONFIGURED/,
     );
   } finally {
-    if (previousUrl === undefined) delete process.env.SOUL_SUPERAGI_URL; else process.env.SOUL_SUPERAGI_URL = previousUrl;
-    if (previousKey === undefined) delete process.env.SOUL_SUPERAGI_API_KEY; else process.env.SOUL_SUPERAGI_API_KEY = previousKey;
+    if (previousUrl === undefined) Reflect.deleteProperty(process.env, 'SOUL_SUPERAGI_URL'); else process.env.SOUL_SUPERAGI_URL = previousUrl;
+    if (previousKey === undefined) Reflect.deleteProperty(process.env, 'SOUL_SUPERAGI_API_KEY'); else process.env.SOUL_SUPERAGI_API_KEY = previousKey;
   }
 });

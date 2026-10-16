@@ -1,12 +1,12 @@
 import { TerminalWindowIcon, LoaderIcon, CrossSmallIcon } from './icons';
 import { Button } from './ui/button';
 import {
-  Dispatch,
-  SetStateAction,
   useCallback,
   useEffect,
   useRef,
   useState,
+  type Dispatch,
+  type SetStateAction,
 } from 'react';
 import { cn } from '@/lib/utils';
 import { useArtifactSelector } from '@/hooks/use-artifact';

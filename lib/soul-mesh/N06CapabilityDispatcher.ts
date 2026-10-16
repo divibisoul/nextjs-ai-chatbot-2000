@@ -39,7 +39,7 @@ function withMeshToolContext(payload: unknown, context?: N06MeshExecutionContext
 
 export async function executeN06ExternalCandidate(sourceId: string, payload: unknown, context?: N06MeshExecutionContext) {
   const capability = canonicalN02CapabilityForExternalSource(sourceId);
-  if (!capability) throw new Error('N06_EXTERNAL_SOURCE_NOT_ACTIVATED:' + sourceId);
+  if (!capability) throw new Error(`N06_EXTERNAL_SOURCE_NOT_ACTIVATED:${sourceId}`);
   return executeN06Capability('external-capability-execution', {
     capability,
     payload,

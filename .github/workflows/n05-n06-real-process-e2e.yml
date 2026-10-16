@@ -38,13 +38,13 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: divibisoul/nextjs-ai-chatbot
-          ref: 75ea08296534f973015a78b0b37d82c13c954013
+          ref: 64e1b8719068b153130bcdbcfbbc2c78c11e1b8c
           path: .integration/n05
           fetch-depth: 1
           submodules: false
           persist-credentials: false
       - name: Verify exact N05 candidate
-        run: test "$(git -C .integration/n05 rev-parse HEAD)" = "75ea08296534f973015a78b0b37d82c13c954013"
+        run: test "$(git -C .integration/n05 rev-parse HEAD)" = "64e1b8719068b153130bcdbcfbbc2c78c11e1b8c"
       - name: Install N05 dependencies
         working-directory: .integration/n05
         run: pnpm install --frozen-lockfile --ignore-scripts

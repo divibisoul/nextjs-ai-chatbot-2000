@@ -166,14 +166,14 @@ export async function POST(request: Request) {
               sara_chat_enabled: true,
             },
           };
-          const sara = await saraCycle(userText, id + ':sara', saraContextInput);
+          const sara = await saraCycle(userText, `${id}:sara`, saraContextInput);
           saraContext = [
             'SARA_REGENERATIVE_CONTEXT',
-            'cycle_id=' + sara.cycle_id,
-            'converged=' + String(sara.converged ?? false),
-            'rollback_performed=' + String(sara.rollback_performed ?? false),
-            'trace_hash=' + String(sara.trace_hash ?? ''),
-            'evidence_hash=' + String(sara.execution_report?.evidence_hash ?? ''),
+            `cycle_id=${sara.cycle_id}`,
+            `converged=${String(sara.converged ?? false)}`,
+            `rollback_performed=${String(sara.rollback_performed ?? false)}`,
+            `trace_hash=${String(sara.trace_hash ?? '')}`,
+            `evidence_hash=${String(sara.execution_report?.evidence_hash ?? '')}`,
             'final_state:',
             String(sara.final_state ?? ''),
           ].join('\n');

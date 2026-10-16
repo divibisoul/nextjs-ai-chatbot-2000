@@ -17,16 +17,19 @@ jobs:
           python - <<'PY'
           import json
           d=json.load(open('integrations/soul-25-augmentation.json'))
-          assert d['external_provider_count'] == 16
-          assert len(d['external_providers']) == 16
+          assert d['external_provider_count'] == 25, 'expected 25 registered external providers'
+          assert len(d['external_providers']) == 25, 'provider count must match provider records'
           assert d['soul_peer_count'] == 9
           assert len(d['soul_peers']) == 9
           assert d['native_authority'] == 'preserved'
+          provider_ids = set()
           for p in d['external_providers']:
               assert p['id'] and p['capabilities']
-              assert p['access'] == 'N07 canonical federation'
+              assert p['id'] not in provider_ids, 'duplicate external provider id: ' + p['id']
+              provider_ids.add(p['id'])
+              assert p['access'] == 'N06 capability fabric'
               assert p['structural_state'] == 'REAL'
-              assert p['runtime_state'] == 'PROJECTED'
+              assert p['runtime_state'] in ('PROJECTED', 'ADAPTER_BOUND')
               assert p['requires_adapter'] is True
           print('SOUL-25 AUGMENTATION CONTRACT: PASS')
           PY
