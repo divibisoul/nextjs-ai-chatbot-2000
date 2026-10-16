@@ -19,7 +19,6 @@ function canonicalize(message: SoulMeshMessage, nonce: string): string {
     capability: message.capability ?? null,
     payload: message.payload,
     timestamp: message.timestamp,
-    transport: message.transport ?? null,
     meta: message.meta ?? null,
     nonce,
   });
