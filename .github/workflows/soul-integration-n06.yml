@@ -53,5 +53,5 @@ jobs:
           PY
       - name: N06 external adapter regression tests
         run: pnpm exec tsx --test lib/soul-core/N06ExternalCapabilityFabric.test.ts lib/soul-core/N06MetaGPTBridge.test.ts lib/soul-core/N06LettaBridge.test.ts lib/soul-mesh/N06ExternalProviderAdapters.test.ts
-      - name: MetaGPT runner syntax
-        run: python3 -m py_compile scripts/n06-metagpt-runner.py
+      - name: N06 Python provider runner syntax
+        run: python3 -m py_compile scripts/n06-metagpt-runner.py scripts/smolagents_runner.py scripts/dspy_runner.py
