@@ -1,4 +1,4 @@
-import { randomUUID } from 'crypto';
+import { randomUUID } from 'node:crypto';
 import type { SoulMeshMessage } from './SoulMeshProtocol';
 
 /** Executable N06 ↔ N05 handoff contract. Transport remains replaceable; identity/correlation is not. */
