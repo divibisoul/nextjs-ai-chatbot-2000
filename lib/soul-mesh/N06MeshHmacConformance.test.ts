@@ -251,3 +251,40 @@ test('N06 peer client sends Bearer and canonical HMAC together in production', a
   }
 });
 
+
+test('N06 secondary peer client refuses Bearer-only production Mesh before network I/O', async () => {
+  const originalUrl = process.env.SOUL_MESH_N05_URL;
+  const originalSecret = process.env.SOUL_MESH_HMAC_SECRET;
+  const originalToken = process.env.SOUL_MESH_TOKEN;
+  const originalNodeEnv = process.env.NODE_ENV;
+  const originalFetch = globalThis.fetch;
+  let networkCalls = 0;
+
+  process.env.NODE_ENV = 'production';
+  process.env.SOUL_MESH_N05_URL = 'http://127.0.0.1:1';
+  delete process.env.SOUL_MESH_HMAC_SECRET;
+  process.env.SOUL_MESH_TOKEN = 'configured-bearer-token-without-hmac';
+  globalThis.fetch = async () => {
+    networkCalls += 1;
+    return new Response('{}', { status: 200 });
+  };
+
+  try {
+    const { sendTo } = await import('./peer-client');
+    await assert.rejects(
+      sendTo('N05', 'mesh.ping', { probe: 'bearer-must-not-replace-hmac' }),
+      /SOUL_MESH_HMAC_NOT_CONFIGURED:N05/,
+    );
+    assert.equal(networkCalls, 0, 'the request must fail before contacting any peer');
+  } finally {
+    globalThis.fetch = originalFetch;
+    if (originalUrl === undefined) delete process.env.SOUL_MESH_N05_URL;
+    else process.env.SOUL_MESH_N05_URL = originalUrl;
+    if (originalSecret === undefined) delete process.env.SOUL_MESH_HMAC_SECRET;
+    else process.env.SOUL_MESH_HMAC_SECRET = originalSecret;
+    if (originalToken === undefined) delete process.env.SOUL_MESH_TOKEN;
+    else process.env.SOUL_MESH_TOKEN = originalToken;
+    if (originalNodeEnv === undefined) delete process.env.NODE_ENV;
+    else process.env.NODE_ENV = originalNodeEnv;
+  }
+});
