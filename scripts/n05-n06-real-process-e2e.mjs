@@ -14,8 +14,8 @@ if (!n05Root || !existsSync(resolve(n05Root, 'node_modules/next/dist/bin/next'))
 
 const n05Port = Number(process.env.SOUL_TEST_N05_PORT || 18505);
 const n06Port = Number(process.env.SOUL_TEST_N06_PORT || 18506);
-const n05Url = 'http://127.0.0.1:' + n05Port;
-const n06Url = 'http://127.0.0.1:' + n06Port;
+const n05Url = `http://127.0.0.1:${n05Port}`;
+const n06Url = `http://127.0.0.1:${n06Port}`;
 const secret = process.env.SOUL_MESH_HMAC_SECRET || randomBytes(48).toString('hex');
 const token = process.env.SOUL_MESH_TOKEN || randomBytes(32).toString('hex');
 const commonEnv = {
@@ -57,12 +57,12 @@ function start(name, cwd, port, peerEnv) {
 
 function assertRunning(name, child) {
   if (child.exitCode !== null || child.signalCode !== null) {
-    throw new Error(name + ' exited before E2E completed.\n' + logs.get(name));
+    throw new Error(`${name} exited before E2E completed.\n${logs.get(name)}`);
   }
 }
 
 async function jsonGet(url, bearer = false) {
-  const headers = bearer ? { authorization: 'Bearer ' + token } : {};
+  const headers = bearer ? { authorization: `Bearer ${token}` } : {};
   const response = await fetch(url, { headers, cache: 'no-store', signal: AbortSignal.timeout(5000) });
   const body = await response.json().catch(() => null);
   return { response, body };
@@ -81,7 +81,7 @@ async function waitFor(name, child, probe) {
     }
     await new Promise(resolveDelay => setTimeout(resolveDelay, 250));
   }
-  throw new Error(name + ' did not become ready: ' + last + '\n' + logs.get(name));
+  throw new Error(`${name} did not become ready: ${last}\n${logs.get(name)}`);
 }
 
 function runClient(name, cwd, driver, timeoutMs = 20000) {
@@ -99,15 +99,15 @@ function runClient(name, cwd, driver, timeoutMs = 20000) {
     const collect = chunk => { captured = (captured + String(chunk)).slice(-24000); };
     child.stdout.on('data', collect);
     child.stderr.on('data', collect);
-    child.on('error', error => rejectPromise(new Error(name + ' could not start: ' + error.message)));
+    child.on('error', error => rejectPromise(new Error(`${name} could not start: ${error.message}`)));
     const timer = setTimeout(() => {
       child.kill('SIGKILL');
-      rejectPromise(new Error(name + ' timed out.\n' + captured));
+      rejectPromise(new Error(`${name} timed out.\n${captured}`));
     }, timeoutMs);
     child.on('exit', code => {
       clearTimeout(timer);
       if (code === 0) resolvePromise(captured);
-      else rejectPromise(new Error(name + ' exited with ' + code + '.\n' + captured));
+      else rejectPromise(new Error(`${name} exited with ${code}.\n${captured}`));
     });
   });
 }
@@ -132,12 +132,12 @@ try {
 
   await Promise.all([
     waitFor('N05', n05, async () => {
-      const result = await jsonGet(n05Url + '/api/soul-mesh', true);
+      const result = await jsonGet(`${n05Url}/api/soul-mesh`, true);
       return result.response.ok && result.body?.nucleus === 'N05'
         && result.body?.contractVersion === '1.1.0';
     }),
     waitFor('N06', n06, async () => {
-      const result = await jsonGet(n06Url + '/api/soul-mesh');
+      const result = await jsonGet(`${n06Url}/api/soul-mesh`);
       return result.response.ok && result.body?.nucleus === 'N06'
         && result.body?.contractVersion === '1.1.0';
     }),
@@ -153,7 +153,7 @@ try {
   ].join('\n');
   const n05Evidence = await runClient('N05 peer client → N06 actual Next.js runtime', n05Root, n05Driver);
   if (!n05Evidence.includes('N05_TO_N06_REAL_PROCESS_E2E_PASS')) {
-    throw new Error('N05 client did not produce the N05→N06 pass marker.\n' + n05Evidence);
+    throw new Error(`N05 client did not produce the N05→N06 pass marker.\n${n05Evidence}`);
   }
 
   const n06Driver = [
@@ -168,7 +168,7 @@ try {
   ].join('\n');
   const n06Evidence = await runClient('N06 peer client → N05 actual Next.js runtime', n06Root, n06Driver);
   if (!n06Evidence.includes('N06_TO_N05_REAL_PROCESS_E2E_PASS')) {
-    throw new Error('N06 client did not produce the N06→N05 pass marker.\n' + n06Evidence);
+    throw new Error(`N06 client did not produce the N06→N05 pass marker.\n${n06Evidence}`);
   }
 
   console.log(JSON.stringify({
