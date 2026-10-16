@@ -67,7 +67,7 @@ export async function sendFromN06(
  let last:unknown;
  for(let attempt=0;attempt<=retries;attempt++){
   const nonce=secret?createSoulMeshNonce():'';
-  const meta={...(message.meta??{})};delete meta.nonce;if(nonce)meta.nonce=nonce;
+  const meta={...(message.meta??{}),...(nonce?{nonce}:{})};
   const attemptMessage:SoulMeshMessage={...message,timestamp:Date.now(),...(nonce?{nonce}:{}),meta};
   const headers:Record<string,string>={'content-type':'application/json',accept:'application/json','x-soul-correlation-id':attemptMessage.correlationId,'x-soul-trace-id':traceId};
   const bearerToken=(process.env.SOUL_MESH_TOKEN??'').trim();
