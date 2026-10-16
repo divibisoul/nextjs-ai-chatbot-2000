@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { createSoulMeshNonce, signSoulMeshMessage, verifySoulMeshResponse } from '../lib/soul-mesh/SoulMeshHmac.ts';
+import { createSoulMeshNonce, signSoulMeshMessage, verifySoulMeshResponse } from '../lib/soul-mesh/SoulMeshHmac';
 
 const targetUrl = (process.env.SOUL_MESH_N05_URL ?? 'http://127.0.0.1:3000').replace(/\/$/, '');
 const secret = (process.env.SOUL_MESH_HMAC_SECRET ?? '').trim();
