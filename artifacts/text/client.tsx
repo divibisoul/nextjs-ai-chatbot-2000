@@ -11,6 +11,8 @@ import {
   UndoIcon,
 } from '@/components/icons';
 import type { Suggestion } from '@/lib/db/schema';
+// Preserve the schema type as a public compatibility alias for artifact consumers.
+export type TextArtifactSuggestionCompatibility = Suggestion;
 import type { SuggestionStream } from '@/lib/types';
 import { toast } from 'sonner';
 import { getSuggestions } from '../actions';

@@ -50,10 +50,10 @@ export async function saraCycle(input: string, cycleId?: string, context?: SaraF
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 30_000);
   try {
-    const response = await fetch(BASE_URL() + '/v1/cycle', {
+    const response = await fetch(`${BASE_URL()}/v1/cycle`, {
       method: 'POST',
       headers: {
-        authorization: 'Bearer ' + TOKEN(),
+        authorization: `Bearer ${TOKEN()}`,
         'content-type': 'application/json',
         accept: 'application/json',
         'X-Correlation-ID': resolvedCorrelationId,
@@ -67,8 +67,8 @@ export async function saraCycle(input: string, cycleId?: string, context?: SaraF
     try { payload = await response.json(); } catch { payload = null; }
 
     if (!response.ok) {
-      const detail = payload?.error?.message ?? payload?.error ?? ('HTTP_' + response.status);
-      throw new Error('SARA_HTTP_' + response.status + ':' + detail);
+      const detail = payload?.error?.message ?? payload?.error ?? (`HTTP_${response.status}`);
+      throw new Error(`SARA_HTTP_${response.status}:${detail}`);
     }
     if (!payload?.cycle_id || typeof payload?.final_state !== 'string') {
       throw new Error('SARA_INVALID_CYCLE_RESPONSE');
@@ -100,7 +100,7 @@ async function saraAuxRequest(path: string, options: SaraAuxRequestOptions = {})
       accept: 'application/json',
       'X-Correlation-ID': correlationId,
     };
-    if (requiresAuth) headers.authorization = 'Bearer ' + token;
+    if (requiresAuth) headers.authorization = `Bearer ${token}`;
     if (options.method === 'POST') headers['content-type'] = 'application/json';
     const response = await fetch(baseUrl + path, {
       method: options.method ?? 'GET',
@@ -110,7 +110,7 @@ async function saraAuxRequest(path: string, options: SaraAuxRequestOptions = {})
       cache: 'no-store',
     });
     const payload: unknown = await response.json().catch(() => null);
-    if (!response.ok) throw new Error('SARA_HTTP_' + response.status);
+    if (!response.ok) throw new Error(`SARA_HTTP_${response.status}`);
     if (!payload || typeof payload !== 'object' || Array.isArray(payload)) throw new Error('SARA_INVALID_RESPONSE');
     const echoed = response.headers.get('X-Correlation-ID');
     if (echoed && echoed !== correlationId) throw new Error('SARA_CORRELATION_ID_MISMATCH');
@@ -162,5 +162,5 @@ export async function saraRegenerate(
 export async function saraTrace(cycleId: string): Promise<Record<string, unknown>> {
   const id = cycleId.trim();
   if (!id) throw new Error('SARA_CYCLE_ID_REQUIRED');
-  return saraAuxRequest('/v1/trace/' + encodeURIComponent(id), { correlationId: id });
+  return saraAuxRequest(`/v1/trace/${encodeURIComponent(id)}`, { correlationId: id });
 }

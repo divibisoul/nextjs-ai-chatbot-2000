@@ -9,7 +9,7 @@ test('N06 exposes additive SARA operations beyond chat cycle', async () => {
   let observed: { path: string; method: string; auth?: string; correlation?: string } | null = null;
 
   process.env.SARA_BASE_URL = 'http://sara.test';
-  delete process.env.SARA_API_TOKEN;
+  Reflect.deleteProperty(process.env, 'SARA_API_TOKEN');
 
   globalThis.fetch = async (input, init) => {
     const url = String(input);
@@ -52,9 +52,9 @@ test('N06 exposes additive SARA operations beyond chat cycle', async () => {
     assert.equal(observed?.correlation, 'n06-cycle-001');
   } finally {
     globalThis.fetch = originalFetch;
-    if (oldUrl === undefined) delete process.env.SARA_BASE_URL;
+    if (oldUrl === undefined) Reflect.deleteProperty(process.env, 'SARA_BASE_URL');
     else process.env.SARA_BASE_URL = oldUrl;
-    if (oldToken === undefined) delete process.env.SARA_API_TOKEN;
+    if (oldToken === undefined) Reflect.deleteProperty(process.env, 'SARA_API_TOKEN');
     else process.env.SARA_API_TOKEN = oldToken;
   }
 });

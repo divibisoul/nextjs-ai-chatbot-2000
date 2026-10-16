@@ -15,7 +15,9 @@ export const N06_ACTIVE_PEERS=ACTIVE_PEERS;
 export const N06_STRUCTURAL_PEERS=STRUCTURAL_PEERS;
 export const N06_ALL_PEERS:readonly N06Peer[]=[...ACTIVE_PEERS,...STRUCTURAL_PEERS];
 const ENV:Record<N06Peer,string>={N01:'SOUL_MESH_N01_URL',N02:'SOUL_MESH_N02_URL',N03:'SOUL_MESH_N03_URL',N04:'SOUL_MESH_N04_URL',N05:'SOUL_MESH_N05_URL',N07:'SOUL_MESH_N07_URL'};
-const DEFAULT_TIMEOUT=15000, MAX_TIMEOUT=60000, MAX_RETRIES=2;
+const DEFAULT_TIMEOUT=15000;
+const MAX_TIMEOUT=60000;
+const MAX_RETRIES=2;
 function timeout(ms:number){return Math.min(MAX_TIMEOUT,Math.max(1000,Math.floor(ms)));}
 function meshSecret(){return (process.env.SOUL_MESH_HMAC_SECRET??'').trim()||(process.env.SOUL_MESH_SECRET??'').trim();}
 const RETRY_SAFE_CAPABILITIES=new Set(['mesh.ping','mesh.describe','mesh.health','capability.list','sara.health','sara.state','sara.capabilities','sara.trace','external.federation.describe@1.0.0','superagi.fabric.describe@1.0.0','cooperation.health@1.0.0']);
@@ -67,7 +69,7 @@ export async function sendFromN06(
  let last:unknown;
  for(let attempt=0;attempt<=retries;attempt++){
   const nonce=secret?createSoulMeshNonce():'';
-  const meta={...(message.meta??{})};delete meta.nonce;if(nonce)meta.nonce=nonce;
+  const meta=Object.fromEntries(Object.entries(message.meta??{}).filter(([key])=>key!=='nonce'));if(nonce)meta.nonce=nonce;
   const attemptMessage:SoulMeshMessage={...message,timestamp:Date.now(),...(nonce?{nonce}:{}),meta};
   const headers:Record<string,string>={'content-type':'application/json',accept:'application/json','x-soul-correlation-id':attemptMessage.correlationId,'x-soul-trace-id':traceId};
   if(secret){headers['x-soul-mesh-nonce']=nonce;headers['x-soul-mesh-hmac']=target==='N07'?signN07Request(attemptMessage,secret,nonce):signSoulMeshMessage(attemptMessage,secret,nonce);}

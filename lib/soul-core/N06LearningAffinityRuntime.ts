@@ -41,7 +41,7 @@ export function validateLearningVectors(input?: number[], target?: number[]): vo
   if (hasInput !== hasTarget) {
     throw new Error('N06_LEARNING_AFFINITY_INPUT_TARGET_MUST_BE_PAIRED');
   }
-  if (hasInput && input!.length !== target!.length) {
+  if (hasInput && Array.isArray(input) && Array.isArray(target) && input.length !== target.length) {
     throw new Error('N06_LEARNING_AFFINITY_DIMENSION_MISMATCH');
   }
 }
