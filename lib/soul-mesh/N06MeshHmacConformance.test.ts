@@ -190,8 +190,11 @@ test('N06 peer client sends Bearer and canonical HMAC together in production', a
       const incoming = JSON.parse(Buffer.concat(chunks).toString('utf8')) as SoulMeshMessage;
       const nonce = String(incomingRequest.headers['x-soul-mesh-nonce'] ?? '');
       const hmac = String(incomingRequest.headers['x-soul-mesh-hmac'] ?? '');
+      const authorizationHeader = incomingRequest.headers.authorization;
       observed = {
-        authorization: incomingRequest.headers.authorization,
+        authorization: Array.isArray(authorizationHeader)
+          ? authorizationHeader.join(',')
+          : authorizationHeader,
         requestHmacValid: verifySoulMeshMessage(incoming, secret, nonce, hmac),
       };
       const signed = signSoulMeshResponse(incoming, { ok: true, nucleus: 'N05' }, 'response', secret);
