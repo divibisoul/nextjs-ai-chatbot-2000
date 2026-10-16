@@ -42,7 +42,7 @@ export class N06PeerMeshBridge {
     throw last instanceof Error?last:new Error(`PEER_REQUEST_FAILED:${peer}`);
   }
   async health(peer:Exclude<NucleusId,'N06'>){const state=this.peers.get(peer);if(!state)return{peer,configured:false,healthy:false};const result=await this.request(peer,'mesh.health',{nucleus:'N06'});return{peer,configured:true,healthy:true,latencyMs:result.latencyMs};}
-  async broadcast(capability:string,payload:unknown){return Promise.allSettled(PEERS.filter(p=>this.peers.has(p)&&this.peers.get(p)!.openedUntil<=Date.now()).map(peer=>this.request(peer,capability,payload)));}
-  async combo(steps:readonly {target:Exclude<NucleusId,'N06'>;capability:string;payload?:unknown}[]){const correlationId=randomUUID(),traceId=randomUUID();let value:unknown=null;const results:unknown[]=[];for(const step of steps){const result=await this.request(step.target,step.capability,step.payload??value,correlationId,traceId);value=result.payload;results.push(result);}return{correlationId,traceId,results,final:value};}
+  async broadcast(capability:string,payload:unknown){const available=PEERS.filter(peer=>{const state=this.peers.get(peer);return state!==undefined&&state.openedUntil<=Date.now();});return Promise.allSettled(available.map(peer=>this.request(peer,capability,payload)));}
+  async combo(steps:readonly {target:Exclude<NucleusId,'N06'>;capability:string;payload?:unknown}[]){const correlationId=randomUUID();const traceId=randomUUID();let value:unknown=null;const results:unknown[]=[];for(const step of steps){const result=await this.request(step.target,step.capability,step.payload??value,correlationId,traceId);value=result.payload;results.push(result);}return{correlationId,traceId,results,final:value};}
 }
 export const n06PeerMeshBridge=new N06PeerMeshBridge();
