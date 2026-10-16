@@ -19,7 +19,9 @@ function canonicalize(message: SoulMeshMessage, nonce: string): string {
     capability: message.capability ?? null,
     payload: message.payload,
     timestamp: message.timestamp,
-    transport: message.transport ?? null,
+    // N05 signs the shared `transport` canonical field from metadata. Retain
+    // that same field here; removing it breaks N05↔N06 HMAC interoperability.
+    transport: message.meta?.transport,
     meta: message.meta ?? null,
     nonce,
   });
