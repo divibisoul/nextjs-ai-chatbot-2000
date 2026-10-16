@@ -33,9 +33,14 @@ function sortGoMaps(value:unknown):unknown{
 }
 function canonicalGoValue(value:unknown):string{
  if(value===null||value===undefined)return 'null';
- if(typeof value==='string')return JSON.stringify(value).replace(/[<>&\\u2028\\u2029]/g,character=>({
-  '<':'\\u003c','>':'\\u003e','&':'\\u0026','\\u2028':'\\u2028','\\u2029':'\\u2029',
- } as Record<string,string>)[character]??character);
+ if(typeof value==='string'){
+  return JSON.stringify(value)
+   .replace(/</g, '\\u003c')
+   .replace(/>/g, '\\u003e')
+   .replace(/&/g, '\\u0026')
+   .replace(/\u2028/g, '\\u2028')
+   .replace(/\u2029/g, '\\u2029');
+ }
  if(typeof value==='number'){
   if(!Number.isFinite(value))throw new Error('N07_CANONICAL_NUMBER_INVALID');
   return JSON.stringify(value);
@@ -48,8 +53,7 @@ function canonicalGoValue(value:unknown):string{
   return '{'+keys.map(key=>canonicalGoValue(key)+':'+canonicalGoValue(record[key])).join(',')+'}';
  }
  throw new Error('N07_CANONICAL_VALUE_UNSUPPORTED');
-}
-function canonicalGoStruct(fields:ReadonlyArray<readonly [string,unknown]>):string{
+}function canonicalGoStruct(fields:ReadonlyArray<readonly [string,unknown]>):string{
  return '{'+fields.map(([key,value])=>canonicalGoValue(key)+':'+canonicalGoValue(value)).join(',')+'}';
 }
 /** Sign N07 requests in the exact field order and nested-map ordering used by Go encoding/json. */
