@@ -51,23 +51,24 @@ jobs:
       - name: Generate ephemeral HMAC and bearer secrets
         shell: bash
         run: |
-          echo "SOUL_MESH_HMAC_SECRET=$(openssl rand -hex 48)" >> "$GITHUB_ENV"
-          echo "SOUL_MESH_TOKEN=$(openssl rand -hex 32)" >> "$GITHUB_ENV"
-          echo "AUTH_SECRET=$(openssl rand -hex 32)" >> "$GITHUB_ENV"
+          hmac_secret="$(openssl rand -hex 48)"
+          bearer_token="$(openssl rand -hex 32)"
+          auth_secret="$(openssl rand -hex 32)"
+          echo "::add-mask::$hmac_secret"
+          echo "::add-mask::$bearer_token"
+          echo "::add-mask::$auth_secret"
+          {
+            echo "SOUL_MESH_HMAC_SECRET=$hmac_secret"
+            echo "SOUL_MESH_TOKEN=$bearer_token"
+            echo "AUTH_SECRET=$auth_secret"
+          } >> "$GITHUB_ENV"
       - name: Build actual N05 production runtime
         working-directory: .integration/n05
-        env:
-          AUTH_SECRET: ${{ env.AUTH_SECRET }}
         run: pnpm run build
       - name: Build actual N06 production runtime
-        env:
-          AUTH_SECRET: ${{ env.AUTH_SECRET }}
         run: pnpm run build:web
       - name: Bidirectional N05↔N06 real-process HTTP/HMAC E2E
         env:
           SOUL_N05_WORKDIR: ${{ github.workspace }}/.integration/n05
           SOUL_N06_WORKDIR: ${{ github.workspace }}
-          SOUL_MESH_HMAC_SECRET: ${{ env.SOUL_MESH_HMAC_SECRET }}
-          SOUL_MESH_TOKEN: ${{ env.SOUL_MESH_TOKEN }}
-          AUTH_SECRET: ${{ env.AUTH_SECRET }}
         run: node scripts/n05-n06-real-process-e2e.mjs
