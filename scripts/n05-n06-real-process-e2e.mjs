@@ -144,7 +144,9 @@ try {
   ]);
 
   const n05Driver = [
-    "import { sendToNucleus } from './lib/soul-mesh/adapter.ts';",
+    "import * as adapterModule from './lib/soul-mesh/adapter.ts';",
+    "const sendToNucleus = adapterModule.sendToNucleus ?? adapterModule.default?.sendToNucleus;",
+    "if (typeof sendToNucleus !== 'function') throw new Error('N05_SEND_TO_NUCLEUS_EXPORT_MISSING');",
     "const r = await sendToNucleus('N06', 'mesh.ping', { probe: 'N05_N06_REAL_PROCESS_PAIR' }, 5000);",
     "if (!r || r.ok !== true || r.nucleus !== 'N06') throw new Error('N05_TO_N06_CONTRACT_OR_HMAC_FAILED: ' + JSON.stringify(r));",
     "console.log('N05_TO_N06_REAL_PROCESS_E2E_PASS ' + JSON.stringify({source:'N05',target:'N06',capability:'mesh.ping',transport:'HTTP',requestAuthentication:'HMAC-SHA256',responseAuthentication:'HMAC-SHA256',payload:r}));",
