@@ -4,7 +4,7 @@ import { signSoulMeshMessage, verifySoulMeshMessage, signSoulMeshResponse, verif
 import type { SoulMeshMessage } from './SoulMeshProtocol';
 import { createHmac } from 'node:crypto';
 import { createServer } from 'node:http';
-import { verifyN07LegacyResponse } from './N06PeerAdapter';
+import { signN07Request, verifyN07LegacyResponse } from './N06PeerAdapter';
 
 const secret = '01234567890123456789012345678901';
 
@@ -174,6 +174,35 @@ test('N06 verifies a canonical N05 HTTP response with metadata-only transport', 
   });
   const hmac = createHmac('sha256', secret).update(n05Canonical, 'utf8').digest('hex');
   assert.equal(verifySoulMeshResponse(input, { ...response, hmac }, secret), true);
+});
+
+test('N06 secondary peer client signer preserves Go lexicographic ordering for numeric-looking map keys', () => {
+  const message: SoulMeshMessage = {
+    protocol: 'soul-mesh/1',
+    contractVersion: '1.1.0',
+    id: 'n06-secondary-n07-request',
+    correlationId: 'n06-secondary-n07-correlation',
+    source: 'N06',
+    target: 'N07',
+    kind: 'request',
+    capability: 'mesh.ping',
+    payload: { nested: { '10': 'ten', '2': 'two' }, probe: true },
+    timestamp: 1781568000123,
+    transport: 'HTTP',
+    meta: {
+      runtime: 'nextjs-ai-chatbot-2000',
+      transport: 'HTTP',
+      encoding: 'json',
+      version: '1.1.1',
+      traceId: 'n06-secondary-n07-correlation',
+      nonce: 'n06-secondary-n07-nonce',
+    },
+    nonce: 'n06-secondary-n07-nonce',
+  };
+  const nonce = 'n06-secondary-n07-nonce';
+  const independentCanonical = '{"protocol":"soul-mesh/1","contractVersion":"1.1.0","id":"n06-secondary-n07-request","correlationId":"n06-secondary-n07-correlation","source":"N06","target":"N07","kind":"request","capability":"mesh.ping","payload":{"nested":{"10":"ten","2":"two"},"probe":true},"timestamp":1781568000123,"transport":"HTTP","meta":{"encoding":"json","nonce":"n06-secondary-n07-nonce","runtime":"nextjs-ai-chatbot-2000","traceId":"n06-secondary-n07-correlation","transport":"HTTP","version":"1.1.1"},"nonce":"n06-secondary-n07-nonce"}';
+  const expected = createHmac('sha256', secret).update(independentCanonical, 'utf8').digest('hex');
+  assert.equal(signN07Request(message, secret, nonce), expected);
 });
 
 test('N06 peer client sends Bearer and canonical HMAC together in production', async () => {
