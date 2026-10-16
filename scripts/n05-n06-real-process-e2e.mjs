@@ -158,7 +158,9 @@ try {
 
   const n06Driver = [
     "import { randomUUID } from 'node:crypto';",
-    "import { sendFromN06 } from './lib/soul-mesh/N06PeerAdapter.ts';",
+    "import * as peerAdapterModule from './lib/soul-mesh/N06PeerAdapter.ts';",
+    "const sendFromN06 = peerAdapterModule.sendFromN06 ?? peerAdapterModule.default?.sendFromN06;",
+    "if (typeof sendFromN06 !== 'function') throw new Error('N06_SEND_FROM_N06_EXPORT_MISSING');",
     "const correlation = 'n05-n06-real-process-' + randomUUID();",
     "const r = await sendFromN06('N05', 'mesh.ping', { probe: 'N05_N06_REAL_PROCESS_PAIR' }, 5000, correlation, correlation, 0);",
     "if (!r || r.ok !== true || r.nucleus !== 'N05') throw new Error('N06_TO_N05_CONTRACT_OR_HMAC_FAILED: ' + JSON.stringify(r));",
