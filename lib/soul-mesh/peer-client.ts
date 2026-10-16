@@ -1,6 +1,7 @@
 import type { SoulMeshMessage } from './SoulMeshProtocol';
 import { randomUUID } from 'node:crypto';
 import { createSoulMeshNonce, signSoulMeshMessage, verifySoulMeshResponse } from './SoulMeshHmac';
+import { signN07Request, verifyN07LegacyResponse } from './N06PeerAdapter';
 
 export const NUCLEUS_ID = 'N06' as const;
 const PEERS = ('N01 N02 N03 N04 N05 N07').split(' ') as Array<'N01' | 'N02' | 'N03' | 'N04' | 'N05' | 'N07'>;
@@ -33,7 +34,7 @@ function signedHeaders(message: SoulMeshMessage): Record<string, string> {
     message.nonce = nonce;
     message.meta = { ...(message.meta ?? {}), nonce };
     headers['x-soul-mesh-nonce'] = nonce;
-    headers['x-soul-mesh-hmac'] = signSoulMeshMessage(message, secret, nonce);
+    headers['x-soul-mesh-hmac'] = target === 'N07' ? signN07Request(message, secret, nonce) : signSoulMeshMessage(message, secret, nonce);
   }
   return headers;
 }
@@ -103,8 +104,8 @@ export async function sendTo(
     ) {
       throw new Error('SOUL_MESH_RESPONSE_INVALID');
     }
-    if (secret && !verifySoulMeshResponse(message, body, secret)) {
-      throw new Error('SOUL_MESH_RESPONSE_HMAC_INVALID');
+    if (secret && !(target === 'N07' ? verifyN07LegacyResponse(message, body, secret) : verifySoulMeshResponse(message, body, secret))) {
+      throw new Error(target === 'N07' ? 'N06_N07_LEGACY_RESPONSE_HMAC_INVALID' : 'SOUL_MESH_RESPONSE_HMAC_INVALID');
     }
     if (!response.ok || body.kind === 'error') {
       throw new Error(`SOUL_MESH_REMOTE_ERROR:${target}`);
