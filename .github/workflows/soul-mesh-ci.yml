@@ -90,6 +90,14 @@ jobs:
           fi
       - name: Typecheck Mesh adapter
         run: pnpm exec tsc -p tsconfig.mesh.json --noEmit
+      - name: Verify external provider runners fail closed without pinned sources
+        shell: bash
+        run: |
+          set -euo pipefail
+          smolagents_result="$(printf '%s' '{"root":"/tmp/soul-n06-missing-smolagents","task":"integrity probe"}' | python3 scripts/smolagents_runner.py)"
+          python3 -c 'import json,sys; v=json.load(sys.stdin); assert v.get("state") == "DEGRADED" and v.get("code") == "SMOLAGENTS_SOURCE_NOT_AVAILABLE", v' <<< "$smolagents_result"
+          dspy_result="$(printf '%s' '{"root":"/tmp/soul-n06-missing-dspy","signature":"question -> answer","inputs":{"question":"integrity probe"}}' | python3 scripts/dspy_runner.py)"
+          python3 -c 'import json,sys; v=json.load(sys.stdin); assert v.get("state") == "DEGRADED" and v.get("code") == "DSPY_SOURCE_NOT_AVAILABLE", v' <<< "$dspy_result"
       - name: Run nucleus processor tests
         run: pnpm run test:nucleus05
       - name: Run N06 cognitive runtime and authority tests

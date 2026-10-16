@@ -43,7 +43,7 @@ function config(){
 }
 export function describeSmolAgentsAdapter():SmolAgentsEvidence{
   const c=config();
-  const sourcePresent=fs.existsSync(c.root)&&fs.statSync(c.root).isDirectory();
+  const sourcePresent=fs.existsSync(c.root)&&fs.statSync(c.root).isDirectory()&&(fs.existsSync(path.join(c.root,'src','smolagents','__init__.py'))||fs.existsSync(path.join(c.root,'smolagents','__init__.py')));
   const tokenPresent=Boolean(env('HF_TOKEN'));
   if(!enabled())return {state:'DEGRADED',code:'SMOLAGENTS_ADAPTER_DISABLED',provider:'huggingface/smolagents',revision:SMOLAGENTS_REVISION,root:c.root,python:c.python,enabled:false,sourcePresent,modelId:c.modelId,modelProvider:c.provider,tokenPresent,executorType:c.executorType};
   if(!sourcePresent)return {state:'DEGRADED',code:'SMOLAGENTS_SOURCE_NOT_AVAILABLE',provider:'huggingface/smolagents',revision:SMOLAGENTS_REVISION,root:c.root,python:c.python,enabled:true,sourcePresent:false,modelId:c.modelId,modelProvider:c.provider,tokenPresent,executorType:c.executorType};

@@ -20,10 +20,10 @@ const enabled=()=>/^(1|true|yes)$/i.test(env('SOUL_N06_OPENHANDS_ENABLED'));
 function config(){return {root:path.resolve(env('SOUL_N06_OPENHANDS_ROOT','integrations/soul-upstream/openhands'))};}
 export function describeOpenHandsAdapter():OpenHandsEvidence{
   const c=config();
-  const sourcePresent=fs.existsSync(c.root)&&fs.statSync(c.root).isDirectory();
+  const sourcePresent=fs.existsSync(c.root)&&fs.statSync(c.root).isDirectory()&&fs.existsSync(path.join(c.root,'README.md'))&&fs.existsSync(path.join(c.root,'package.json'));
   if(!enabled()) return {state:'DEGRADED',code:'OPENHANDS_ADAPTER_DISABLED',provider:'OpenHands/OpenHands',revision:OPENHANDS_REVISION,root:c.root,enabled:false,sourcePresent,interfaceProfile:'unknown',executionProven:false};
   if(!sourcePresent) return {state:'DEGRADED',code:'OPENHANDS_SOURCE_NOT_AVAILABLE',provider:'OpenHands/OpenHands',revision:OPENHANDS_REVISION,root:c.root,enabled:true,sourcePresent:false,interfaceProfile:'unknown',executionProven:false};
-  const hasAgentCanvas=fs.existsSync(path.join(c.root,'agent-canvas'))||fs.existsSync(path.join(c.root,'agent_canvas'))||fs.existsSync(path.join(c.root,'README.md'));
+  const hasAgentCanvas=fs.existsSync(path.join(c.root,'agent-canvas'))||fs.existsSync(path.join(c.root,'agent_canvas'));
   if(hasAgentCanvas) return {state:'DEGRADED',code:'OPENHANDS_AGENT_CANVAS_INTERFACE_REQUIRES_RUNTIME_BRIDGE',provider:'OpenHands/OpenHands',revision:OPENHANDS_REVISION,root:c.root,enabled:true,sourcePresent:true,interfaceProfile:'agent-canvas',executionProven:false};
   return {state:'DEGRADED',code:'OPENHANDS_PINNED_INTERFACE_UNVERIFIED',provider:'OpenHands/OpenHands',revision:OPENHANDS_REVISION,root:c.root,enabled:true,sourcePresent:true,interfaceProfile:'unknown',executionProven:false};
 }
