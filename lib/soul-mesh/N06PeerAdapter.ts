@@ -16,7 +16,9 @@ export const N06_ACTIVE_PEERS=ACTIVE_PEERS;
 export const N06_STRUCTURAL_PEERS=STRUCTURAL_PEERS;
 export const N06_ALL_PEERS:readonly N06Peer[]=[...ACTIVE_PEERS,...STRUCTURAL_PEERS];
 const ENV:Record<N06Peer,string>={N01:'SOUL_MESH_N01_URL',N02:'SOUL_MESH_N02_URL',N03:'SOUL_MESH_N03_URL',N04:'SOUL_MESH_N04_URL',N05:'SOUL_MESH_N05_URL',N07:'SOUL_MESH_N07_URL'};
-const DEFAULT_TIMEOUT=15000, MAX_TIMEOUT=60000, MAX_RETRIES=2;
+const DEFAULT_TIMEOUT=15000;
+const MAX_TIMEOUT=60000;
+const MAX_RETRIES=2;
 function timeout(ms:number){return Math.min(MAX_TIMEOUT,Math.max(1000,Math.floor(ms)));}
 function meshSecret(){return (process.env.SOUL_MESH_HMAC_SECRET??process.env.SOUL_MESH_SECRET??'').trim();}
 export function getN06Peers(){return ACTIVE_PEERS.map(id=>({id,url:process.env[ENV[id]]?.trim().replace(/\/$/,'')??''}));}
