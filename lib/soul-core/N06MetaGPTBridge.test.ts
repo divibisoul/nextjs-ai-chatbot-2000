@@ -13,11 +13,11 @@ test('MetaGPT remote adapter preserves correlation and upstream pin', async () =
     assert.equal(metaGPTConfigured(),true); assert.equal(seen?.url,'http://metagpt.test/execute');
     const headers=seen?.init.headers as Record<string,string>; assert.equal(headers['x-soul-correlation-id'],'corr-metagpt'); assert.equal(headers.authorization,'Bearer token');
     const body=JSON.parse(String(seen?.init.body)) as Record<string,unknown>; assert.equal(body.maxRounds,4); assert.equal(body.upstreamCommit,'11cdf466d042aece04fc6cfd13b28e1a70341b1f'); assert.equal(result.nucleus,'N06');
-  } finally { if(oldUrl===undefined) delete process.env.N06_METAGPT_URL; else process.env.N06_METAGPT_URL=oldUrl; if(oldToken===undefined) delete process.env.N06_METAGPT_TOKEN; else process.env.N06_METAGPT_TOKEN=oldToken; }
+  } finally { if(oldUrl===undefined) Reflect.deleteProperty(process.env, 'N06_METAGPT_URL'); else process.env.N06_METAGPT_URL=oldUrl; if(oldToken===undefined) Reflect.deleteProperty(process.env, 'N06_METAGPT_TOKEN'); else process.env.N06_METAGPT_TOKEN=oldToken; }
 });
 
 test('MetaGPT fails closed without remote or explicitly configured local runtime', async () => {
   const oldUrl=process.env.N06_METAGPT_URL; const oldPython=process.env.N06_METAGPT_LOCAL_PYTHON;
   process.env.N06_METAGPT_URL=''; process.env.N06_METAGPT_LOCAL_PYTHON='';
-  try { await assert.rejects(executeMetaGPTProject({goal:'blocked'},'corr-blocked'), /METAGPT_LOCAL/); } finally { if(oldUrl===undefined) delete process.env.N06_METAGPT_URL; else process.env.N06_METAGPT_URL=oldUrl; if(oldPython===undefined) delete process.env.N06_METAGPT_LOCAL_PYTHON; else process.env.N06_METAGPT_LOCAL_PYTHON=oldPython; }
+  try { await assert.rejects(executeMetaGPTProject({goal:'blocked'},'corr-blocked'), /METAGPT_LOCAL/); } finally { if(oldUrl===undefined) Reflect.deleteProperty(process.env, 'N06_METAGPT_URL'); else process.env.N06_METAGPT_URL=oldUrl; if(oldPython===undefined) Reflect.deleteProperty(process.env, 'N06_METAGPT_LOCAL_PYTHON'); else process.env.N06_METAGPT_LOCAL_PYTHON=oldPython; }
 });
