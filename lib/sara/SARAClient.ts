@@ -50,10 +50,10 @@ export async function saraCycle(input: string, cycleId?: string, context?: SaraF
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 30_000);
   try {
-    const response = await fetch(BASE_URL() + '/v1/cycle', {
+    const response = await fetch(`${BASE_URL()}/v1/cycle`, {
       method: 'POST',
       headers: {
-        authorization: 'Bearer ' + TOKEN(),
+        authorization: `Bearer ${TOKEN()}`,
         'content-type': 'application/json',
         accept: 'application/json',
         'X-Correlation-ID': resolvedCorrelationId,
@@ -67,8 +67,8 @@ export async function saraCycle(input: string, cycleId?: string, context?: SaraF
     try { payload = await response.json(); } catch { payload = null; }
 
     if (!response.ok) {
-      const detail = payload?.error?.message ?? payload?.error ?? ('HTTP_' + response.status);
-      throw new Error('SARA_HTTP_' + response.status + ':' + detail);
+      const detail = payload?.error?.message ?? payload?.error ?? (`HTTP_${response.status}`);
+      throw new Error(`SARA_HTTP_${response.status}:${detail}`);
     }
     if (!payload?.cycle_id || typeof payload?.final_state !== 'string') {
       throw new Error('SARA_INVALID_CYCLE_RESPONSE');
