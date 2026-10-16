@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { createSoulMeshNonce, signSoulMeshMessage, verifySoulMeshResponse } from '../lib/soul-mesh/SoulMeshHmac';
+import type { SoulMeshMessage } from '../lib/soul-mesh/SoulMeshProtocol';
 
 const targetUrl = (process.env.SOUL_MESH_N05_URL ?? 'http://127.0.0.1:3000').replace(/\/$/, '');
 const secret = (process.env.SOUL_MESH_HMAC_SECRET ?? '').trim();
@@ -7,7 +8,7 @@ const token = process.env.SOUL_MESH_TOKEN ?? 'ci-stage-token';
 const correlationId = process.env.SOUL_STAGE_CORRELATION_ID?.trim() || randomUUID();
 if (!secret) throw new Error('STAGE01_HMAC_SECRET_REQUIRED');
 
-const message = {
+const message: SoulMeshMessage = {
   protocol: 'soul-mesh/1' as const,
   contractVersion: '1.1.0' as const,
   id: randomUUID(),
