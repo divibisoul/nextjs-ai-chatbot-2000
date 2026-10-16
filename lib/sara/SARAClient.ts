@@ -110,7 +110,17 @@ async function saraAuxRequest(path: string, options: SaraAuxRequestOptions = {})
       cache: 'no-store',
     });
     const payload: unknown = await response.json().catch(() => null);
-    if (!response.ok) throw new Error(`SARA_HTTP_${response.status}`);
+    if (!response.ok) {
+      const errorPayload = payload && typeof payload === 'object' && !Array.isArray(payload)
+        ? (payload as Record<string, unknown>)
+        : {};
+      const errorValue = errorPayload.error;
+      const nestedMessage = errorValue && typeof errorValue === 'object' && 'message' in errorValue
+        ? (errorValue as { message?: unknown }).message
+        : undefined;
+      const detail = nestedMessage ?? errorValue ?? `HTTP_${response.status}`;
+      throw new Error(`SARA_HTTP_${response.status}:${String(detail)}`);
+    }
     if (!payload || typeof payload !== 'object' || Array.isArray(payload)) throw new Error('SARA_INVALID_RESPONSE');
     const echoed = response.headers.get('X-Correlation-ID');
     if (echoed && echoed !== correlationId) throw new Error('SARA_CORRELATION_ID_MISMATCH');

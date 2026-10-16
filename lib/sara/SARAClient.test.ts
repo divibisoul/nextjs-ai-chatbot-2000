@@ -2,6 +2,30 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { saraHealth, saraCapabilities, saraState, saraAudit, saraRegenerate, saraTrace } from './SARAClient';
 
+test('N06 preserves upstream diagnostic detail for SARA auxiliary HTTP errors', async () => {
+  const originalFetch = globalThis.fetch;
+  const oldUrl = process.env.SARA_BASE_URL;
+  const oldToken = process.env.SARA_API_TOKEN;
+  process.env.SARA_BASE_URL = 'http://sara.test';
+  process.env.SARA_API_TOKEN = 'test-token';
+  globalThis.fetch = async () => new Response(
+    JSON.stringify({ error: { message: 'upstream rejected input' } }),
+    { status: 422, headers: { 'content-type': 'application/json' } },
+  );
+  try {
+    await assert.rejects(
+      () => saraAudit('input', 'n06-audit-error-001'),
+      /SARA_HTTP_422:upstream rejected input/,
+    );
+  } finally {
+    globalThis.fetch = originalFetch;
+    if (oldUrl === undefined) Reflect.deleteProperty(process.env, 'SARA_BASE_URL');
+    else process.env.SARA_BASE_URL = oldUrl;
+    if (oldToken === undefined) Reflect.deleteProperty(process.env, 'SARA_API_TOKEN');
+    else process.env.SARA_API_TOKEN = oldToken;
+  }
+});
+
 test('N06 exposes additive SARA operations beyond chat cycle', async () => {
   const originalFetch = globalThis.fetch;
   const oldUrl = process.env.SARA_BASE_URL;
