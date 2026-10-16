@@ -3,6 +3,7 @@ import test from 'node:test';
 import { signSoulMeshMessage, verifySoulMeshMessage, signSoulMeshResponse, verifySoulMeshResponse } from './SoulMeshHmac';
 import type { SoulMeshMessage } from './SoulMeshProtocol';
 import { createHmac } from 'node:crypto';
+import { createServer } from 'node:http';
 import { verifyN07LegacyResponse } from './N06PeerAdapter';
 
 const secret = '01234567890123456789012345678901';
@@ -174,3 +175,76 @@ test('N06 verifies a canonical N05 HTTP response with metadata-only transport', 
   const hmac = createHmac('sha256', secret).update(n05Canonical, 'utf8').digest('hex');
   assert.equal(verifySoulMeshResponse(input, { ...response, hmac }, secret), true);
 });
+
+test('N06 peer client sends Bearer and canonical HMAC together in production', async () => {
+  const originalUrl = process.env.SOUL_MESH_N05_URL;
+  const originalSecret = process.env.SOUL_MESH_HMAC_SECRET;
+  const originalToken = process.env.SOUL_MESH_TOKEN;
+  const originalNodeEnv = process.env.NODE_ENV;
+  const token = 'n06-n05-dual-auth-loopback-token';
+  let observed: { authorization: string | undefined; requestHmacValid: boolean } | undefined;
+  const server = createServer(async (incomingRequest, outgoingResponse) => {
+    try {
+      const chunks: Buffer[] = [];
+      for await (const chunk of incomingRequest) chunks.push(Buffer.from(chunk));
+      const incoming = JSON.parse(Buffer.concat(chunks).toString('utf8')) as SoulMeshMessage;
+      const nonce = String(incomingRequest.headers['x-soul-mesh-nonce'] ?? '');
+      const hmac = String(incomingRequest.headers['x-soul-mesh-hmac'] ?? '');
+      observed = {
+        authorization: incomingRequest.headers.authorization,
+        requestHmacValid: verifySoulMeshMessage(incoming, secret, nonce, hmac),
+      };
+      const signed = signSoulMeshResponse(incoming, { ok: true, nucleus: 'N05' }, 'response', secret);
+      outgoingResponse.writeHead(200, { 'content-type': 'application/json' });
+      outgoingResponse.end(JSON.stringify({
+        ...signed.message,
+        nonce: signed.nonce,
+        hmac: signed.hmac,
+      }));
+    } catch (error) {
+      outgoingResponse.writeHead(500, { 'content-type': 'text/plain' });
+      outgoingResponse.end(error instanceof Error ? error.message : String(error));
+    }
+  });
+
+  process.env.NODE_ENV = 'production';
+  process.env.SOUL_MESH_HMAC_SECRET = secret;
+  process.env.SOUL_MESH_TOKEN = token;
+
+  try {
+    await new Promise<void>((resolve, reject) => {
+      server.once('error', reject);
+      server.listen(0, '127.0.0.1', resolve);
+    });
+    const address = server.address();
+    assert.ok(address && typeof address !== 'string');
+    process.env.SOUL_MESH_N05_URL = `http://127.0.0.1:${address.port}`;
+
+    // Import after setting the endpoint because N06's peer URL table is built
+    // once at module initialization.
+    const { sendTo } = await import('./peer-client');
+    const result = await sendTo('N05', 'mesh.ping', { probe: 'n06-n05-dual-auth' }, 3000);
+
+    assert.equal(observed?.authorization, `Bearer ${token}`);
+    assert.equal(observed?.requestHmacValid, true);
+    assert.equal(result.source, 'N05');
+    assert.equal(result.target, 'N06');
+    assert.deepEqual(result.payload, { ok: true, nucleus: 'N05' });
+  } finally {
+    try {
+      if (server.listening) {
+        await new Promise<void>((resolve, reject) => server.close(error => error ? reject(error) : resolve()));
+      }
+    } finally {
+      if (originalUrl === undefined) delete process.env.SOUL_MESH_N05_URL;
+      else process.env.SOUL_MESH_N05_URL = originalUrl;
+      if (originalSecret === undefined) delete process.env.SOUL_MESH_HMAC_SECRET;
+      else process.env.SOUL_MESH_HMAC_SECRET = originalSecret;
+      if (originalToken === undefined) delete process.env.SOUL_MESH_TOKEN;
+      else process.env.SOUL_MESH_TOKEN = originalToken;
+      if (originalNodeEnv === undefined) delete process.env.NODE_ENV;
+      else process.env.NODE_ENV = originalNodeEnv;
+    }
+  }
+});
+
