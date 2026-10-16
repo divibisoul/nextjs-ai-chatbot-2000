@@ -86,7 +86,9 @@ test('N05 metadata transport canonicalization is accepted by N06', () => {
     ...request(),
     source: 'N05',
     target: 'N06',
-    transport: undefined,
+    // The canonical HMAC transport value comes from meta.transport, exactly
+    // as N05 signs it, even if an out-of-band top-level alias is present.
+    transport: 'REALTIME',
     meta: {
       runtime: 'nextjs-ai-chatbot',
       transport: 'HTTP',
