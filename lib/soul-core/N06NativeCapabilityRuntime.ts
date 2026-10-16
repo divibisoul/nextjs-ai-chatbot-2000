@@ -13,6 +13,9 @@ import { executeMetaGPTProject, metaGPTStatus } from './N06MetaGPTBridge';
 import { executeLettaMessage, executeLettaHistory, executeLettaAgentStatus } from './N06LettaBridge';
 import { describeN06ExternalCapabilityFabric, resolveN06ExternalProvider } from './N06ExternalCapabilityFabric';
 
+// Compatibility export retained for callers that still import the legacy tool directly.
+export const legacyRequestSuggestionsCompatibility = requestSuggestions;
+
 type LocalToolExecutionOptions = { toolCallId: string; messages: unknown[] };
 type ExecutableTool = { execute?: (input: unknown, options: LocalToolExecutionOptions) => unknown | Promise<unknown> };
 
