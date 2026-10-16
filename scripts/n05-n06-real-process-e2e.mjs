@@ -147,6 +147,48 @@ try {
     }),
   ]);
 
+  const bearerOnlyMessage = {
+    protocol: 'soul-mesh/1',
+    contractVersion: '1.1.0',
+    id: 'n06-bearer-only-attempt',
+    correlationId: 'n05-bearer-only-rejection',
+    source: 'N06',
+    target: 'N05',
+    kind: 'request',
+    capability: 'mesh.ping',
+    payload: { probe: 'bearer-only-must-be-rejected' },
+    timestamp: Date.now(),
+    meta: {
+      runtime: 'n05-n06-real-process-e2e',
+      transport: 'HTTP',
+      encoding: 'json',
+      version: '1.1.0',
+      traceId: 'n05-bearer-only-rejection',
+    },
+  };
+  const bearerOnlyResponse = await fetch(`${n05Url}/api/soul-mesh`, {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      authorization: `Bearer ${token}`,
+      'x-soul-correlation-id': bearerOnlyMessage.correlationId,
+    },
+    body: JSON.stringify(bearerOnlyMessage),
+    cache: 'no-store',
+    signal: AbortSignal.timeout(5000),
+  });
+  const bearerOnlyBody = await bearerOnlyResponse.json().catch(() => null);
+  if (bearerOnlyResponse.status !== 401 || bearerOnlyBody?.error !== 'INVALID_MESH_SIGNATURE') {
+    throw new Error('N05_BEARER_ONLY_HMAC_BYPASS: actual production server did not reject a bearer-only message with HMAC configured.');
+  }
+  const bearerOnlyEvidence = 'N05_BEARER_ONLY_HMAC_REJECTED ' + JSON.stringify({
+    target: 'N05 actual Next.js production process',
+    status: bearerOnlyResponse.status,
+    error: bearerOnlyBody.error,
+    hmacHeaderSent: false,
+    accepted: false,
+  });
+
   const n05Driver = [
     "import * as adapterModule from './lib/soul-mesh/adapter.ts';",
     "const sendToNucleus = adapterModule.sendToNucleus ?? adapterModule.default?.sendToNucleus;",
@@ -182,6 +224,7 @@ try {
     evidence: {
       independentN05Server: 'actual Next.js production HTTP process',
       independentN06Server: 'actual Next.js production HTTP process',
+      bearerOnlyRejectedByN05: bearerOnlyEvidence,
       n05ClientToN06Server: n05Evidence.trim(),
       n06ClientToN05Server: n06Evidence.trim(),
       transport: 'HTTP',
