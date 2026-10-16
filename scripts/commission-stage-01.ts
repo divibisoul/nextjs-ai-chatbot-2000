@@ -28,12 +28,12 @@ message.meta = { ...message.meta, nonce, traceId: correlationId };
 const hmac = signSoulMeshMessage(message, secret, nonce);
 
 async function main() {
-  const response = await fetch(targetUrl + '/api/soul-mesh', {
+  const response = await fetch(`${targetUrl}/api/soul-mesh`, {
     method: 'POST',
     headers: {
       'content-type': 'application/json',
       accept: 'application/json',
-      authorization: 'Bearer ' + token,
+      authorization: `Bearer ${token}`,
       'x-soul-correlation-id': correlationId,
       'x-soul-trace-id': correlationId,
       'x-soul-mesh-nonce': nonce,
@@ -42,7 +42,7 @@ async function main() {
     body: JSON.stringify(message)
   });
   const body = await response.json();
-  if (!response.ok) throw new Error('N06_TO_N05_HTTP_' + response.status);
+  if (!response.ok) throw new Error(`N06_TO_N05_HTTP_${response.status}`);
   if (body.source !== 'N05' || body.target !== 'N06' || body.correlationId !== correlationId) throw new Error('STAGE01_N06_TO_N05_ROUTE_OR_CORRELATION_INVALID');
   if (!verifySoulMeshResponse(message, body, secret)) throw new Error('STAGE01_N06_TO_N05_RESPONSE_HMAC_INVALID');
   console.log(JSON.stringify({state:'REAL',direction:'N06->N05',capability:message.capability,correlationId,responseMessageId:body.id,payload:body.payload}));
