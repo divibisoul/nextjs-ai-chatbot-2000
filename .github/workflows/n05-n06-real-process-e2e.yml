@@ -1,0 +1,73 @@
+name: N05-N06 Real Process E2E
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: n05-n06-real-process-e2e-\${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  bidirectional-http-hmac:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 35
+    steps:
+      - name: Checkout N06 candidate
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.12.3
+      - name: Install N06 dependencies
+        run: pnpm install --frozen-lockfile --ignore-scripts
+      - name: Checkout N05 interoperability candidate
+        uses: actions/checkout@v4
+        with:
+          repository: divibisoul/nextjs-ai-chatbot
+          ref: e64b5725ce74858bd913ff706a3955fce570c9b4
+          path: .integration/n05
+          fetch-depth: 1
+          submodules: false
+          persist-credentials: false
+      - name: Verify exact N05 candidate
+        run: test "$(git -C .integration/n05 rev-parse HEAD)" = "e64b5725ce74858bd913ff706a3955fce570c9b4"
+      - name: Install N05 dependencies
+        working-directory: .integration/n05
+        run: pnpm install --frozen-lockfile --ignore-scripts
+      - name: Generate ephemeral HMAC and bearer secrets
+        shell: bash
+        run: |
+          echo "SOUL_MESH_HMAC_SECRET=$(openssl rand -hex 48)" >> "$GITHUB_ENV"
+          echo "SOUL_MESH_TOKEN=$(openssl rand -hex 32)" >> "$GITHUB_ENV"
+          echo "AUTH_SECRET=$(openssl rand -hex 32)" >> "$GITHUB_ENV"
+      - name: Build actual N05 production runtime
+        working-directory: .integration/n05
+        env:
+          AUTH_SECRET: \${{ env.AUTH_SECRET }}
+        run: pnpm run build
+      - name: Build actual N06 production runtime
+        env:
+          AUTH_SECRET: \${{ env.AUTH_SECRET }}
+        run: pnpm run build:web
+      - name: Bidirectional N05↔N06 real-process HTTP/HMAC E2E
+        env:
+          SOUL_N05_WORKDIR: \${{ github.workspace }}/.integration/n05
+          SOUL_N06_WORKDIR: \${{ github.workspace }}
+          SOUL_MESH_HMAC_SECRET: \${{ env.SOUL_MESH_HMAC_SECRET }}
+          SOUL_MESH_TOKEN: \${{ env.SOUL_MESH_TOKEN }}
+          AUTH_SECRET: \${{ env.AUTH_SECRET }}
+        run: node scripts/n05-n06-real-process-e2e.mjs
