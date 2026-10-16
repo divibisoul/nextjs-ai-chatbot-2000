@@ -9,7 +9,7 @@ function env(name: string): string { return String(process.env[name] ?? '').trim
 function required(value: unknown, code: string): string { const s=String(value ?? '').trim(); if(!s) throw new Error(code); return s; }
 function baseUrl(): string {
   const raw=env('N06_LETTA_URL') || DEFAULT_URL;
-  try { const u=new URL(raw); if(!/^https?:$/.test(u.protocol)) throw new Error(); return u.toString().replace(/\/$/,''); } catch { throw new Error('LETTA_ENDPOINT_INVALID'); }
+  try { const u=new URL(raw); if(!/^https?:$/.test(u.protocol)) throw new Error(); u.username=''; u.password=''; u.search=''; u.hash=''; return u.toString().replace(/\/$/,''); } catch { throw new Error('LETTA_ENDPOINT_INVALID'); }
 }
 function authHeaders(correlationId: string): Record<string,string> {
   const apiKey=env('N06_LETTA_API_KEY');
@@ -25,7 +25,16 @@ async function request(path:string, init:RequestInit, fetchImpl:FetchLike):Promi
   if(!response.ok) throw new Error(`LETTA_HTTP_${response.status}`);
   return payload as Record<string,unknown>;
 }
-export function lettaStatus(){return {provider:'letta-ai/letta',upstreamCommit:UPSTREAM_COMMIT,endpoint:baseUrl(),agentId:env('N06_LETTA_AGENT_ID')||DEFAULT_AGENT_ID,configured:Boolean(env('N06_LETTA_API_KEY')&&env('N06_LETTA_AGENT_ID')),state:env('N06_LETTA_API_KEY')&&env('N06_LETTA_AGENT_ID')?'CONFIGURED':'BLOCKED'};}
+export function lettaStatus(){
+  const agentId=env('N06_LETTA_AGENT_ID')||DEFAULT_AGENT_ID;
+  try {
+    const endpoint=baseUrl();
+    const configured=Boolean(env('N06_LETTA_API_KEY')&&agentId);
+    return {provider:'letta-ai/letta',upstreamCommit:UPSTREAM_COMMIT,endpoint,agentId,configured,state:configured?'CONFIGURED':'BLOCKED'};
+  } catch {
+    return {provider:'letta-ai/letta',upstreamCommit:UPSTREAM_COMMIT,endpoint:'invalid',agentId,configured:false,state:'BLOCKED',code:'LETTA_ENDPOINT_INVALID'};
+  }
+}
 export async function executeLettaMessage(input:unknown,correlationId:string,fetchImpl:FetchLike=fetch,context?:N06Context){
   if(!input || typeof input!=='object' || Array.isArray(input)) throw new Error('LETTA_INPUT_MUST_BE_OBJECT');
   const v=input as Record<string,unknown>; const agentId=required(v.agentId||env('N06_LETTA_AGENT_ID'),'LETTA_AGENT_ID_REQUIRED'); const message=required(v.message??v.input,'LETTA_MESSAGE_REQUIRED');
