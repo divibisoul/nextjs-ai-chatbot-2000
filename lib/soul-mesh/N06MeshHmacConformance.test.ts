@@ -79,3 +79,96 @@ test('N06 verifies the canonical Go/N07 legacy HMAC response envelope', () => {
   assert.equal(verifyN07LegacyResponse(request, { ...response, payload: { ok: false } }, secret), false);
   assert.equal(verifyN07LegacyResponse(request, { ...response, correlationId: 'other-correlation' }, secret), false);
 });
+
+
+test('N05 metadata transport canonicalization is accepted by N06', () => {
+  const message: SoulMeshMessage = {
+    ...request(),
+    source: 'N05',
+    target: 'N06',
+    transport: undefined,
+    meta: {
+      runtime: 'nextjs-ai-chatbot',
+      transport: 'HTTP',
+      encoding: 'json',
+      version: '1.1.0',
+      nonce: 'n05-shared-canonical-request-nonce',
+    },
+  };
+  const nonce = 'n05-shared-canonical-request-nonce';
+  // Independent copy of N05's stable canonical field order; this intentionally
+  // omits a top-level transport and obtains HTTP from meta.transport.
+  const n05Canonical = JSON.stringify({
+    protocol: message.protocol,
+    contractVersion: message.contractVersion,
+    id: message.id,
+    correlationId: message.correlationId,
+    source: message.source,
+    target: message.target,
+    kind: message.kind,
+    capability: message.capability ?? null,
+    payload: message.payload,
+    timestamp: message.timestamp,
+    transport: message.meta?.transport,
+    meta: message.meta ?? null,
+    nonce,
+  });
+  const n05Signature = createHmac('sha256', secret).update(n05Canonical, 'utf8').digest('hex');
+  assert.equal(verifySoulMeshMessage(message, secret, nonce, n05Signature), true);
+});
+
+test('N06 verifies a canonical N05 HTTP response with metadata-only transport', () => {
+  const input: SoulMeshMessage = {
+    ...request(),
+    source: 'N06',
+    target: 'N05',
+    transport: undefined,
+    meta: {
+      runtime: 'nextjs-ai-chatbot-2000',
+      transport: 'HTTP',
+      encoding: 'json',
+      version: '1.1.0',
+      traceId: 'n05-n06-response-correlation',
+    },
+    correlationId: 'n05-n06-response-correlation',
+  };
+  const nonce = 'n05-shared-canonical-response-nonce';
+  const response: SoulMeshMessage = {
+    protocol: 'soul-mesh/1',
+    contractVersion: '1.1.0',
+    id: 'n05-canonical-response',
+    correlationId: input.correlationId,
+    source: 'N05',
+    target: 'N06',
+    kind: 'response',
+    capability: input.capability,
+    payload: { ok: true, nucleus: 'N05' },
+    timestamp: Date.now(),
+    nonce,
+    meta: {
+      runtime: 'nextjs-ai-chatbot',
+      transport: 'HTTP',
+      encoding: 'json',
+      version: '1.1.0',
+      nonce,
+      traceId: input.correlationId,
+    },
+  };
+  const n05Canonical = JSON.stringify({
+    protocol: response.protocol,
+    contractVersion: response.contractVersion,
+    id: response.id,
+    correlationId: response.correlationId,
+    source: response.source,
+    target: response.target,
+    kind: response.kind,
+    capability: response.capability ?? null,
+    payload: response.payload,
+    timestamp: response.timestamp,
+    transport: response.meta?.transport,
+    meta: response.meta ?? null,
+    nonce,
+  });
+  const hmac = createHmac('sha256', secret).update(n05Canonical, 'utf8').digest('hex');
+  assert.equal(verifySoulMeshResponse(input, { ...response, hmac }, secret), true);
+});
