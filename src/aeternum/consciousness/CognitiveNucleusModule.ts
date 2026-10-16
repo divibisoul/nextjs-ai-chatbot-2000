@@ -1,0 +1,8 @@
+import{hortaCore,nervoVago,wormhole}from"./MetaConsciousnessModule";
+export type CognitiveAspect="HARMONY"|"ANALYSIS"|"ABSTRACT"|"SYNTHESIS";
+export class CognitiveNucleusModule{readonly id="cognitive-nucleus";private active=false;private aspect:CognitiveAspect="SYNTHESIS";
+constructor(){wormhole.register(this.id,this,{type:"engine",version:"1.0.0",capabilities:["cognitive-processing","aspect-coordination"],dependencies:["aeternum.consciousness.eventBus","aeternum.consciousness.hortaCore"]});nervoVago.on("cognitive.activate",()=>this.activate());nervoVago.on<{input:string;aspect?:CognitiveAspect}>("cognitive.process",d=>void this.process(d));nervoVago.on<{to:CognitiveAspect}>("cognitive.switchAspect",d=>this.switchAspect(d))}
+activate(){this.active=true;hortaCore.set(this.id+".active",true);nervoVago.emit("module.activated",{module:this.id})}deactivate(){this.active=false;hortaCore.set(this.id+".active",false);nervoVago.emit("module.deactivated",{module:this.id})}
+async process(d:{input:string;aspect?:CognitiveAspect}){if(!this.active||!d.input.trim())return;const before=hortaCore.get("active.mode")??null;const aspect=d.aspect??this.aspect;this.aspect=aspect;hortaCore.set("active.mode",aspect);nervoVago.emit("cognitive.result",{input:d.input,aspect,modeBefore:before,modeAfter:aspect,timestamp:Date.now()})}
+switchAspect(d:{to:CognitiveAspect}){const from=this.aspect;this.aspect=d.to;hortaCore.set("active.mode",d.to);nervoVago.emit("cognitive.aspect.changed",{from,to:d.to,timestamp:Date.now()})}getAspect(){return this.aspect}}
+export const cognitiveNucleusModule=new CognitiveNucleusModule();
