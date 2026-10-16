@@ -11,7 +11,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: n05-n06-real-process-e2e-\${{ github.ref }}
+  group: n05-n06-real-process-e2e-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
@@ -57,17 +57,17 @@ jobs:
       - name: Build actual N05 production runtime
         working-directory: .integration/n05
         env:
-          AUTH_SECRET: \${{ env.AUTH_SECRET }}
+          AUTH_SECRET: ${{ env.AUTH_SECRET }}
         run: pnpm run build
       - name: Build actual N06 production runtime
         env:
-          AUTH_SECRET: \${{ env.AUTH_SECRET }}
+          AUTH_SECRET: ${{ env.AUTH_SECRET }}
         run: pnpm run build:web
       - name: Bidirectional N05↔N06 real-process HTTP/HMAC E2E
         env:
-          SOUL_N05_WORKDIR: \${{ github.workspace }}/.integration/n05
-          SOUL_N06_WORKDIR: \${{ github.workspace }}
-          SOUL_MESH_HMAC_SECRET: \${{ env.SOUL_MESH_HMAC_SECRET }}
-          SOUL_MESH_TOKEN: \${{ env.SOUL_MESH_TOKEN }}
-          AUTH_SECRET: \${{ env.AUTH_SECRET }}
+          SOUL_N05_WORKDIR: ${{ github.workspace }}/.integration/n05
+          SOUL_N06_WORKDIR: ${{ github.workspace }}
+          SOUL_MESH_HMAC_SECRET: ${{ env.SOUL_MESH_HMAC_SECRET }}
+          SOUL_MESH_TOKEN: ${{ env.SOUL_MESH_TOKEN }}
+          AUTH_SECRET: ${{ env.AUTH_SECRET }}
         run: node scripts/n05-n06-real-process-e2e.mjs
