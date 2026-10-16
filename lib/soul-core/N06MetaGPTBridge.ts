@@ -27,18 +27,18 @@ async function remote(value: Record<string, unknown>, correlationId: string, fet
   const base = env('N06_METAGPT_URL');
   if (!base) throw new Error('METAGPT_REMOTE_ENDPOINT_NOT_CONFIGURED');
   let url: URL;
-  try { url = new URL('/execute', base.replace(/\/$/, '') + '/'); } catch { throw new Error('METAGPT_REMOTE_ENDPOINT_INVALID'); }
+  try { url = new URL('/execute', `${base.replace(/\/$/, '')}/`); } catch { throw new Error('METAGPT_REMOTE_ENDPOINT_INVALID'); }
   if (!/^https?:$/.test(url.protocol)) throw new Error('METAGPT_REMOTE_ENDPOINT_PROTOCOL_INVALID');
   const res = await fetchImpl(url, {
     method: 'POST',
-    headers: { 'content-type': 'application/json', accept: 'application/json', ...(env('N06_METAGPT_TOKEN') ? { authorization: 'Bearer ' + env('N06_METAGPT_TOKEN') } : {}), 'x-soul-correlation-id': correlationId },
+    headers: { 'content-type': 'application/json', accept: 'application/json', ...(env('N06_METAGPT_TOKEN') ? { authorization: `Bearer ${env('N06_METAGPT_TOKEN')}` } : {}), 'x-soul-correlation-id': correlationId },
     body: JSON.stringify({ goal: value.goal, maxRounds: rounds(value.maxRounds), root: env('N06_METAGPT_ROOT') || DEFAULT_ROOT, upstreamCommit: UPSTREAM_COMMIT })
   });
   const raw = await res.text();
   let payload: unknown;
   try { payload = raw ? JSON.parse(raw) : null; } catch { throw new Error('METAGPT_REMOTE_RESPONSE_JSON_INVALID'); }
   if (!payload || typeof payload !== 'object' || Array.isArray(payload)) throw new Error('METAGPT_REMOTE_RESPONSE_OBJECT_REQUIRED');
-  if (!res.ok) throw new Error('METAGPT_REMOTE_ERROR:' + res.status);
+  if (!res.ok) throw new Error(`METAGPT_REMOTE_ERROR:${res.status}`);
   return payload as Record<string, unknown>;
 }
 async function local(value: Record<string, unknown>, correlationId: string) {
@@ -54,7 +54,7 @@ async function local(value: Record<string, unknown>, correlationId: string) {
     child.stdout.on('data', c => { out += String(c); if (out.length > 4 * 1024 * 1024) { child.kill('SIGKILL'); finish(() => reject(new Error('METAGPT_LOCAL_OUTPUT_TOO_LARGE'))); } });
     child.stderr.on('data', c => { err += String(c); if (err.length > 1024 * 1024) err = err.slice(-1024 * 1024); });
     child.on('error', e => finish(() => reject(e)));
-    child.on('close', code => finish(() => { if (code !== 0) return reject(new Error('METAGPT_LOCAL_EXIT:' + String(code) + ':' + err.trim())); try { const parsed = JSON.parse(out.trim()) as Record<string, unknown>; resolve(parsed); } catch { reject(new Error('METAGPT_LOCAL_RESPONSE_JSON_INVALID')); } }));
+    child.on('close', code => finish(() => { if (code !== 0) return reject(new Error(`METAGPT_LOCAL_EXIT:${String(code)}:${err.trim()}`)); try { const parsed = JSON.parse(out.trim()) as Record<string, unknown>; resolve(parsed); } catch { reject(new Error('METAGPT_LOCAL_RESPONSE_JSON_INVALID')); } }));
     child.stdin.end(JSON.stringify({ goal: value.goal, maxRounds: rounds(value.maxRounds), root, upstreamCommit: UPSTREAM_COMMIT, correlationId }));
   });
 }
@@ -67,6 +67,6 @@ export async function executeMetaGPTProject(input: unknown, correlationId: strin
   if (env('N06_METAGPT_URL')) return { nucleus: 'N06', provider: 'FoundationAgents/MetaGPT', upstreamCommit: UPSTREAM_COMMIT, correlationId: correlation, contextMetadata: context?.metadata ?? {}, payload: await remote(value, correlation, fetchImpl) };
   if (!env('N06_METAGPT_LOCAL_PYTHON')) throw new Error('METAGPT_LOCAL_RUNTIME_NOT_CONFIGURED');
   const payload = await local(value, correlation);
-  if (String(payload.state ?? '') !== 'PASS') throw new Error('METAGPT_RUNTIME_BLOCKED:' + String(payload.code ?? 'UNKNOWN'));
+  if (String(payload.state ?? '') !== 'PASS') throw new Error(`METAGPT_RUNTIME_BLOCKED:${String(payload.code ?? 'UNKNOWN')}`);
   return { nucleus: 'N06', provider: 'FoundationAgents/MetaGPT', upstreamCommit: UPSTREAM_COMMIT, correlationId: correlation, contextMetadata: context?.metadata ?? {}, payload };
 }
