@@ -70,6 +70,8 @@ export async function sendFromN06(
   const meta={...(message.meta??{})};delete meta.nonce;if(nonce)meta.nonce=nonce;
   const attemptMessage:SoulMeshMessage={...message,timestamp:Date.now(),...(nonce?{nonce}:{}),meta};
   const headers:Record<string,string>={'content-type':'application/json',accept:'application/json','x-soul-correlation-id':attemptMessage.correlationId,'x-soul-trace-id':traceId};
+  const bearerToken=(process.env.SOUL_MESH_TOKEN??'').trim();
+  if(bearerToken)headers.authorization=`Bearer ${bearerToken}`;
   if(secret){headers['x-soul-mesh-nonce']=nonce;headers['x-soul-mesh-hmac']=target==='N07'?signN07Request(attemptMessage,secret,nonce):signSoulMeshMessage(attemptMessage,secret,nonce);}
   const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),timeout(timeoutMs));
   try{
