@@ -239,7 +239,7 @@ test('N06 peer client sends Bearer and canonical HMAC together in production', a
     }
   });
 
-  process.env.NODE_ENV = 'production';
+  Reflect.set(process.env, 'NODE_ENV', 'production');
   process.env.SOUL_MESH_HMAC_SECRET = secret;
   process.env.SOUL_MESH_TOKEN = token;
 
@@ -274,8 +274,8 @@ test('N06 peer client sends Bearer and canonical HMAC together in production', a
       else process.env.SOUL_MESH_HMAC_SECRET = originalSecret;
       if (originalToken === undefined) delete process.env.SOUL_MESH_TOKEN;
       else process.env.SOUL_MESH_TOKEN = originalToken;
-      if (originalNodeEnv === undefined) delete process.env.NODE_ENV;
-      else process.env.NODE_ENV = originalNodeEnv;
+      if (originalNodeEnv === undefined) Reflect.deleteProperty(process.env, 'NODE_ENV');
+      else Reflect.set(process.env, 'NODE_ENV', originalNodeEnv);
     }
   }
 });
@@ -289,7 +289,7 @@ test('N06 secondary peer client refuses Bearer-only production Mesh before netwo
   const originalFetch = globalThis.fetch;
   let networkCalls = 0;
 
-  process.env.NODE_ENV = 'production';
+  Reflect.set(process.env, 'NODE_ENV', 'production');
   process.env.SOUL_MESH_N05_URL = 'http://127.0.0.1:1';
   delete process.env.SOUL_MESH_HMAC_SECRET;
   process.env.SOUL_MESH_TOKEN = 'configured-bearer-token-without-hmac';
@@ -313,7 +313,7 @@ test('N06 secondary peer client refuses Bearer-only production Mesh before netwo
     else process.env.SOUL_MESH_HMAC_SECRET = originalSecret;
     if (originalToken === undefined) delete process.env.SOUL_MESH_TOKEN;
     else process.env.SOUL_MESH_TOKEN = originalToken;
-    if (originalNodeEnv === undefined) delete process.env.NODE_ENV;
-    else process.env.NODE_ENV = originalNodeEnv;
+    if (originalNodeEnv === undefined) Reflect.deleteProperty(process.env, 'NODE_ENV');
+    else Reflect.set(process.env, 'NODE_ENV', originalNodeEnv);
   }
 });

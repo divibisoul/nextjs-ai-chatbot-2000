@@ -34,7 +34,7 @@ function signedHeaders(message: SoulMeshMessage): Record<string, string> {
     message.nonce = nonce;
     message.meta = { ...(message.meta ?? {}), nonce };
     headers['x-soul-mesh-nonce'] = nonce;
-    headers['x-soul-mesh-hmac'] = target === 'N07' ? signN07Request(message, secret, nonce) : signSoulMeshMessage(message, secret, nonce);
+    headers['x-soul-mesh-hmac'] = message.target === 'N07' ? signN07Request(message, secret, nonce) : signSoulMeshMessage(message, secret, nonce);
   }
   return headers;
 }
