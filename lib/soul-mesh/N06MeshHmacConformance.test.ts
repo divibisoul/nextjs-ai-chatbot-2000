@@ -268,11 +268,11 @@ test('N06 peer client sends Bearer and canonical HMAC together in production', a
         await new Promise<void>((resolve, reject) => server.close(error => error ? reject(error) : resolve()));
       }
     } finally {
-      if (originalUrl === undefined) delete process.env.SOUL_MESH_N05_URL;
+      if (originalUrl === undefined) Reflect.deleteProperty(process.env, 'SOUL_MESH_N05_URL');
       else process.env.SOUL_MESH_N05_URL = originalUrl;
-      if (originalSecret === undefined) delete process.env.SOUL_MESH_HMAC_SECRET;
+      if (originalSecret === undefined) Reflect.deleteProperty(process.env, 'SOUL_MESH_HMAC_SECRET');
       else process.env.SOUL_MESH_HMAC_SECRET = originalSecret;
-      if (originalToken === undefined) delete process.env.SOUL_MESH_TOKEN;
+      if (originalToken === undefined) Reflect.deleteProperty(process.env, 'SOUL_MESH_TOKEN');
       else process.env.SOUL_MESH_TOKEN = originalToken;
       if (originalNodeEnv === undefined) Reflect.deleteProperty(process.env, 'NODE_ENV');
       else Reflect.set(process.env, 'NODE_ENV', originalNodeEnv);
@@ -291,7 +291,7 @@ test('N06 secondary peer client refuses Bearer-only production Mesh before netwo
 
   Reflect.set(process.env, 'NODE_ENV', 'production');
   process.env.SOUL_MESH_N05_URL = 'http://127.0.0.1:1';
-  delete process.env.SOUL_MESH_HMAC_SECRET;
+  Reflect.deleteProperty(process.env, 'SOUL_MESH_HMAC_SECRET');
   process.env.SOUL_MESH_TOKEN = 'configured-bearer-token-without-hmac';
   globalThis.fetch = async () => {
     networkCalls += 1;
@@ -307,11 +307,11 @@ test('N06 secondary peer client refuses Bearer-only production Mesh before netwo
     assert.equal(networkCalls, 0, 'the request must fail before contacting any peer');
   } finally {
     globalThis.fetch = originalFetch;
-    if (originalUrl === undefined) delete process.env.SOUL_MESH_N05_URL;
+    if (originalUrl === undefined) Reflect.deleteProperty(process.env, 'SOUL_MESH_N05_URL');
     else process.env.SOUL_MESH_N05_URL = originalUrl;
-    if (originalSecret === undefined) delete process.env.SOUL_MESH_HMAC_SECRET;
+    if (originalSecret === undefined) Reflect.deleteProperty(process.env, 'SOUL_MESH_HMAC_SECRET');
     else process.env.SOUL_MESH_HMAC_SECRET = originalSecret;
-    if (originalToken === undefined) delete process.env.SOUL_MESH_TOKEN;
+    if (originalToken === undefined) Reflect.deleteProperty(process.env, 'SOUL_MESH_TOKEN');
     else process.env.SOUL_MESH_TOKEN = originalToken;
     if (originalNodeEnv === undefined) Reflect.deleteProperty(process.env, 'NODE_ENV');
     else Reflect.set(process.env, 'NODE_ENV', originalNodeEnv);

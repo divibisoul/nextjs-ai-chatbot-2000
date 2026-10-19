@@ -181,13 +181,13 @@ try {
   if (bearerOnlyResponse.status !== 401 || bearerOnlyBody?.error !== 'INVALID_MESH_SIGNATURE') {
     throw new Error('N05_BEARER_ONLY_HMAC_BYPASS: actual production server did not reject a bearer-only message with HMAC configured.');
   }
-  const bearerOnlyEvidence = 'N05_BEARER_ONLY_HMAC_REJECTED ' + JSON.stringify({
+  const bearerOnlyEvidence = `N05_BEARER_ONLY_HMAC_REJECTED ${JSON.stringify({
     target: 'N05 actual Next.js production process',
     status: bearerOnlyResponse.status,
     error: bearerOnlyBody.error,
     hmacHeaderSent: false,
     accepted: false,
-  });
+  })}`;
 
   const n05Driver = [
     "import * as adapterModule from './lib/soul-mesh/adapter.ts';",

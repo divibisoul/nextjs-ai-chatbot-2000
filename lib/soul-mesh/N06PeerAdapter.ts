@@ -46,15 +46,15 @@ function canonicalGoValue(value:unknown):string{
   return JSON.stringify(value);
  }
  if(typeof value==='boolean')return value?'true':'false';
- if(Array.isArray(value))return '['+value.map(canonicalGoValue).join(',')+']';
+ if(Array.isArray(value))return `[${value.map(canonicalGoValue).join(',')}]`;
  if(typeof value==='object'){
   const record=value as Record<string,unknown>;
   const keys=Object.keys(record).sort((left,right)=>Buffer.compare(Buffer.from(left,'utf8'),Buffer.from(right,'utf8')));
-  return '{'+keys.map(key=>canonicalGoValue(key)+':'+canonicalGoValue(record[key])).join(',')+'}';
+  return `{${keys.map(key=>`${canonicalGoValue(key)}:${canonicalGoValue(record[key])}`).join(',')}}`;
  }
  throw new Error('N07_CANONICAL_VALUE_UNSUPPORTED');
 }function canonicalGoStruct(fields:ReadonlyArray<readonly [string,unknown]>):string{
- return '{'+fields.map(([key,value])=>canonicalGoValue(key)+':'+canonicalGoValue(value)).join(',')+'}';
+ return `{${fields.map(([key,value])=>`${canonicalGoValue(key)}:${canonicalGoValue(value)}`).join(',')}}`;
 }
 /** Sign N07 requests in the exact field order and nested-map ordering used by Go encoding/json. */
 export function signN07Request(message:SoulMeshMessage,secret:string,nonce:string):string{
