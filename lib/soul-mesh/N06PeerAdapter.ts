@@ -31,23 +31,53 @@ function sortGoMaps(value:unknown):unknown{
  }
  return value;
 }
+function canonicalGoValue(value:unknown):string{
+ if(value===null||value===undefined)return 'null';
+ if(typeof value==='string'){
+  return JSON.stringify(value)
+   .replace(/</g, '\\u003c')
+   .replace(/>/g, '\\u003e')
+   .replace(/&/g, '\\u0026')
+   .replace(/\u2028/g, '\\u2028')
+   .replace(/\u2029/g, '\\u2029');
+ }
+ if(typeof value==='number'){
+  if(!Number.isFinite(value))throw new Error('N07_CANONICAL_NUMBER_INVALID');
+  return JSON.stringify(value);
+ }
+ if(typeof value==='boolean')return value?'true':'false';
+ if(Array.isArray(value))return `[${value.map(canonicalGoValue).join(',')}]`;
+ if(typeof value==='object'){
+  const record=value as Record<string,unknown>;
+  const keys=Object.keys(record).sort((left,right)=>Buffer.compare(Buffer.from(left,'utf8'),Buffer.from(right,'utf8')));
+  return `{${keys.map(key=>`${canonicalGoValue(key)}:${canonicalGoValue(record[key])}`).join(',')}}`;
+ }
+ throw new Error('N07_CANONICAL_VALUE_UNSUPPORTED');
+}function canonicalGoStruct(fields:ReadonlyArray<readonly [string,unknown]>):string{
+ return `{${fields.map(([key,value])=>`${canonicalGoValue(key)}:${canonicalGoValue(value)}`).join(',')}}`;
+}
 /** Sign N07 requests in the exact field order and nested-map ordering used by Go encoding/json. */
-function signN07Request(message:SoulMeshMessage,secret:string,nonce:string):string{
- const unsigned={
-  protocol:message.protocol,contractVersion:message.contractVersion,id:message.id,correlationId:message.correlationId,
-  source:message.source,target:message.target,kind:message.kind,capability:message.capability??'',
-  payload:sortGoMaps(message.payload),timestamp:message.timestamp,
-  transport:message.meta?.transport??null,meta:sortGoMaps(message.meta??null),nonce,
- };
- return createHmac('sha256',secret).update(JSON.stringify(unsigned),'utf8').digest('hex');
+export function signN07Request(message:SoulMeshMessage,secret:string,nonce:string):string{
+ const unsigned:ReadonlyArray<readonly [string,unknown]>=[
+  ['protocol',message.protocol],['contractVersion',message.contractVersion],['id',message.id],
+  ['correlationId',message.correlationId],['source',message.source],['target',message.target],
+  ['kind',message.kind],['capability',message.capability??''],['payload',sortGoMaps(message.payload)],
+  ['timestamp',message.timestamp],['transport',message.meta?.transport??null],['meta',sortGoMaps(message.meta??null)],['nonce',nonce],
+ ];
+ return createHmac('sha256',secret).update(canonicalGoStruct(unsigned),'utf8').digest('hex');
 }
 /** Verify the actual N07 Go response envelope (protocol.MeshEnvelope canonical bytes). */
 export function verifyN07LegacyResponse(request:SoulMeshMessage,response:SoulMeshMessage,secret:string,now=Date.now()):boolean{
  const nonce=String(response.nonce??response.meta?.nonce??'').trim();const signature=String(response.hmac??'').trim();
  if(!secret||Buffer.byteLength(secret,'utf8')<32||!nonce||!/^[0-9a-f]{64}$/i.test(signature)||!Number.isFinite(response.timestamp)||Math.abs(now-response.timestamp)>30000)return false;
  if(response.source!=='N07'||response.target!=='N06'||request.target!=='N07'||response.correlationId!==request.correlationId||(response.kind!=='response'&&response.kind!=='error'))return false;
- const unsigned={version:'1.0',contractVersion:response.contractVersion,messageId:response.id,source:response.source,target:response.target,timestamp:response.timestamp,nonce,correlationId:response.correlationId,type:response.kind==='error'?'ERROR':'TASK_RESULT',payload:{capability:response.capability??request.capability??'',payload:sortGoMaps(response.payload??{})}};
- const expected=createHmac('sha256',secret).update(JSON.stringify(unsigned),'utf8').digest();const actual=Buffer.from(signature,'hex');return actual.length===expected.length&&timingSafeEqual(actual,expected);
+ const unsigned:ReadonlyArray<readonly [string,unknown]>=[
+  ['version','1.0'],['contractVersion',response.contractVersion],['messageId',response.id],
+  ['source',response.source],['target',response.target],['timestamp',response.timestamp],['nonce',nonce],
+  ['correlationId',response.correlationId],['type',response.kind==='error'?'ERROR':'TASK_RESULT'],
+  ['payload',{capability:response.capability??request.capability??'',payload:sortGoMaps(response.payload??{})}],
+ ];
+ const expected=createHmac('sha256',secret).update(canonicalGoStruct(unsigned),'utf8').digest();const actual=Buffer.from(signature,'hex');return actual.length===expected.length&&timingSafeEqual(actual,expected);
 }
 export function getN06Peers(){return ACTIVE_PEERS.map(id=>({id,url:process.env[ENV[id]]?.trim().replace(/\/$/,'')??''}));}
 export function getN06StructuralPeers(){return STRUCTURAL_PEERS.map(id=>({id,url:process.env[ENV[id]]?.trim().replace(/\/$/,'')??''}));}
@@ -72,6 +102,8 @@ export async function sendFromN06(
   const meta=Object.fromEntries(Object.entries(message.meta??{}).filter(([key])=>key!=='nonce'));if(nonce)meta.nonce=nonce;
   const attemptMessage:SoulMeshMessage={...message,timestamp:Date.now(),...(nonce?{nonce}:{}),meta};
   const headers:Record<string,string>={'content-type':'application/json',accept:'application/json','x-soul-correlation-id':attemptMessage.correlationId,'x-soul-trace-id':traceId};
+  const bearerToken=(process.env.SOUL_MESH_TOKEN??'').trim();
+  if(bearerToken)headers.authorization=`Bearer ${bearerToken}`;
   if(secret){headers['x-soul-mesh-nonce']=nonce;headers['x-soul-mesh-hmac']=target==='N07'?signN07Request(attemptMessage,secret,nonce):signSoulMeshMessage(attemptMessage,secret,nonce);}
   const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),timeout(timeoutMs));
   try{
