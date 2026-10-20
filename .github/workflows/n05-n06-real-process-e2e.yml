@@ -1,5 +1,9 @@
 name: N05-N06 Real Process E2E
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 on:
   pull_request:
     branches: [main]
@@ -9,10 +13,6 @@ on:
 
 permissions:
   contents: read
-
-concurrency:
-  group: n05-n06-real-process-e2e-${{ github.ref }}
-  cancel-in-progress: false
 
 jobs:
   bidirectional-http-hmac:
