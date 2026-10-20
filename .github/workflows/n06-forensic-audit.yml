@@ -5,12 +5,8 @@ concurrency:
   cancel-in-progress: true
 
 on:
-  push:
-    branches:
-      - "audit/cycle3-n06-forensics-2026-09-28"
-  pull_request:
-    branches: [main]
   workflow_dispatch:
+
 permissions:
   contents: read
   pull-requests: read
